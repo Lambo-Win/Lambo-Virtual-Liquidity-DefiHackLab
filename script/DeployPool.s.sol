@@ -2,9 +2,9 @@
 pragma solidity ^0.8.20;
 
 import {Script} from "forge-std/Script.sol";
-import {V2Factory} from "../src/V2Factory.sol";
+import {LamboFactory} from "../src/LamboFactory.sol";
 import {VirtualToken} from "../src/VirtualToken.sol";
-import {LamboTokenV2} from "../src/LamboTokenV2.sol";
+import {LamboToken} from "../src/LamboToken.sol";
 import {LaunchPadUtils} from "../src/Utils/LaunchPadUtils.sol";
 import "forge-std/console2.sol";
 
@@ -19,7 +19,7 @@ contract DeployPool is Script {
 
         vm.startBroadcast(privateKey);
         // 创建 LaunchPad 并部署池
-        (address quoteToken, address pool) = V2Factory(FactoryAddress).createLaunchPad(
+        (address quoteToken, address pool) = LamboFactory(FactoryAddress).createLaunchPad(
             "LamboV2",
             "LamboV2",
             3.5 ether,

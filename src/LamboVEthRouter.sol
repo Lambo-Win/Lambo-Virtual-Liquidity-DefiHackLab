@@ -5,40 +5,39 @@ import './libraries/UniswapV2Library.sol';
 import {IPool} from "./interfaces/Uniswap/IPool.sol";
 import {VirtualToken} from "./VirtualToken.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import {V2Factory} from "./V2Factory.sol";
+import {LamboFactory} from "./LamboFactory.sol";
 
-contract LamboV2Router {
+contract LamboVEthRouter {
     address public constant NATIVE_TOKEN = 0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE;
 
     address public immutable vETH;
-    address public immutable lamboFactory;
     address public immutable uniswapV2Factory;
 
     event BuyQuote(address quoteToken, uint256 amountXIn, uint256 amountXOut);
     event SellQuote(address quoteToken, uint256 amountYIn, uint256 amountXOut);
 
-    constructor(address _vETH, address _uniswapV2Factory, address _lamboFactory) public {
+    constructor(address _vETH, address _uniswapV2Factory) public {
         vETH = _vETH;
-        lamboFactory = _lamboFactory;
         uniswapV2Factory = _uniswapV2Factory;
     }
 
     function createLaunchPadAndInitialBuy(
+        address lamboFactory,
         string memory name, 
         string memory tickname,
         uint256 virtualLiquidityAmount,
-        address virtualLiquidityToken,
         uint256 buyAmount
     ) 
         public 
         payable 
         returns (address quoteToken, address pool, uint256 amountYOut) 
     {
-        (quoteToken, pool) = V2Factory(lamboFactory).createLaunchPad(
+        require(VirtualToken(vETH).isValidFactory(lamboFactory), "only Validfactory");
+        (quoteToken, pool) = LamboFactory(lamboFactory).createLaunchPad(
             name, 
             tickname, 
             virtualLiquidityAmount, 
-            virtualLiquidityToken
+            address(vETH)
         );
 
         amountYOut = _buyQuote(quoteToken, buyAmount, 0);

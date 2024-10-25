@@ -3,20 +3,18 @@ pragma solidity ^0.8.20;
 
 import {Test} from "forge-std/Test.sol";
 import {VirtualToken} from "../src/VirtualToken.sol";
-import {V2Factory} from "../src/V2Factory.sol";
-import {DexFees} from "../src/DexFees.sol";
-import {LamboTokenV2} from "../src/LamboTokenV2.sol";
+import {LamboFactory} from "../src/LamboFactory.sol";
+import {LamboToken} from "../src/LamboToken.sol";
 import {AggregationRouterV6, IWETH} from "../src/libraries/1inchV6.sol";
-import {LamboV2Router} from "../src/LamboV2Router.sol";
+import {LamboVEthRouter} from "../src/LamboVEthRouter.sol";
 import {LaunchPadUtils} from "../src/Utils/LaunchPadUtils.sol";
 
 contract BaseTest is Test {
     VirtualToken public vETH;
-    V2Factory public factory;
-    DexFees public dexFees;
+    LamboFactory public factory;
     AggregationRouterV6 public aggregatorRouter;
-    LamboV2Router public lamboRouter;
-    LamboTokenV2 public lamboTokenV2;
+    LamboVEthRouter public lamboRouter;
+    LamboToken public lamboTokenV2;
 
     address public multiSigAdmin = makeAddr("multiSigAdmin");
 
@@ -27,27 +25,23 @@ contract BaseTest is Test {
         // ankr base mainnet
         vm.createSelectFork("https://rpc.ankr.com/base");
 
-        dexFees = new DexFees();
-        lamboTokenV2 = new LamboTokenV2();
+        lamboTokenV2 = new LamboToken();
 
         vETH = new VirtualToken("vETH", "vETH", LaunchPadUtils.NATIVE_TOKEN, multiSigAdmin);
-        factory = new V2Factory(
+        factory = new LamboFactory(
             multiSigAdmin,
-            payable(address(dexFees)),
             address(lamboTokenV2)
         );
 
         aggregatorRouter = new AggregationRouterV6(IWETH(LaunchPadUtils.WETH));
 
-        lamboRouter = new LamboV2Router(
+        lamboRouter = new LamboVEthRouter(
             address(vETH),
-            address(LaunchPadUtils.UNISWAP_POOL_FACTORY_),
-            address(factory)
+            address(LaunchPadUtils.UNISWAP_POOL_FACTORY_)   
         );
 
-
         vm.startPrank(multiSigAdmin);
-        vETH.updateFactory(address(factory));
+        vETH.updateFactory(address(factory), true);
         vETH.addToWhiteList(address(lamboRouter));
         
         factory.setLamboRouter(address(lamboRouter));

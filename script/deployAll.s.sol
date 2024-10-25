@@ -3,11 +3,10 @@ pragma solidity ^0.8.20;
 
 import {Script} from "forge-std/Script.sol";
 import {VirtualToken} from "../src/VirtualToken.sol";
-import {V2Factory} from "../src/V2Factory.sol";
-import {DexFees} from "../src/DexFees.sol";
-import {LamboTokenV2} from "../src/LamboTokenV2.sol";
+import {LamboFactory} from "../src/LamboFactory.sol";
+import {LamboToken} from "../src/LamboToken.sol";
 import {AggregationRouterV6, IWETH} from "../src/libraries/1inchV6.sol";
-import {LamboV2Router} from "../src/LamboV2Router.sol";
+import {LamboVEthRouter} from "../src/LamboVEthRouter.sol";
 import {LaunchPadUtils} from "../src/Utils/LaunchPadUtils.sol";
 import "forge-std/console2.sol";
 
@@ -18,37 +17,32 @@ contract DeployAll is Script {
         address multiSigAdmin = vm.addr(privateKey);
 
         vm.startBroadcast(privateKey);
-
-        DexFees dexFees = new DexFees();
-        console2.log("DexFees address:", address(dexFees));
-        
-        LamboTokenV2 lamboTokenV2 = new LamboTokenV2();
-        console2.log("LamboTokenV2 address:", address(lamboTokenV2));
+                
+        LamboToken lamboTokenV2 = new LamboToken();
+        console2.log("LamboToken address:", address(lamboTokenV2));
         
         VirtualToken vETH = new VirtualToken("vETH", "vETH", LaunchPadUtils.NATIVE_TOKEN, multiSigAdmin);
         console2.log("VirtualToken address:", address(vETH));
         vm.stopBroadcast();
 
         vm.startBroadcast(privateKey);
-        V2Factory factory = new V2Factory(
+        LamboFactory factory = new LamboFactory(
             multiSigAdmin,
-            payable(address(dexFees)),
             address(lamboTokenV2)
         );
-        console2.log("V2Factory address:", address(factory));
+        console2.log("LamboFactory address:", address(factory));
 
-        LamboV2Router lamboRouter = new LamboV2Router(
+        LamboVEthRouter lamboRouter = new LamboVEthRouter(
             address(vETH),
-            address(LaunchPadUtils.UNISWAP_POOL_FACTORY_),
-            address(factory)
+            address(LaunchPadUtils.UNISWAP_POOL_FACTORY_)
         );
-        console2.log("LamboV2Router address:", address(lamboRouter));
+        console2.log("LamboVEthRouter address:", address(lamboRouter));
 
         vm.stopBroadcast();
 
 
         vm.startBroadcast(privateKey);
-        vETH.updateFactory(address(factory));
+        vETH.updateFactory(address(factory), true);
         vETH.addToWhiteList(address(lamboRouter));
         vETH.addToWhiteList(multiSigAdmin);
         

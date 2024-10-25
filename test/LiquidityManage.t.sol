@@ -30,7 +30,7 @@ contract LiquidityManage  is BaseTest {
     }
 
     function test_liquidityV3() public {
-        (address quoteToken, address pool) = factory.createLaunchPad("LamboTokenV2", "LAMBO", 10 ether, address(vETH));
+        (address quoteToken, address pool) = factory.createLaunchPad("LamboToken", "LAMBO", 10 ether, address(vETH));
 
         // create VETH <-> WETH uniswapV3 Pool
         deal(multiSigAdmin, 100 ether);
@@ -48,7 +48,7 @@ contract LiquidityManage  is BaseTest {
     // 2. addVirtualLiquidity(12 ether)
     // 3, Sell Left tokens, get nearly 6.4 ether
     function test_addVirtualLiquidity() public {
-        (address quoteToken, address pool) = factory.createLaunchPad("LamboTokenV2", "LAMBO", 10 ether, address(vETH));
+        (address quoteToken, address pool) = factory.createLaunchPad("LamboToken", "LAMBO", 10 ether, address(vETH));
 
         // buy-in
         deal(multiSigAdmin, 100 ether);

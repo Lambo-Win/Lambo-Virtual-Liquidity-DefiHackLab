@@ -3,19 +3,17 @@ pragma solidity ^0.8.20;
 
 import {Clones} from "@openzeppelin/contracts/proxy/Clones.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import {DexFees} from "./DexFees.sol";
-import {LamboTokenV2} from "./LamboTokenV2.sol";
+import {LamboToken} from "./LamboToken.sol";
 import {VirtualToken} from "./VirtualToken.sol";
 import {LaunchPadUtils} from "./Utils/LaunchPadUtils.sol";
 import {IPool} from "./interfaces/Uniswap/IPool.sol";
 import {IPoolFactory} from "./interfaces/Uniswap/IPoolFactory.sol";
 import {UniswapV2Library} from "./libraries/UniswapV2Library.sol";
-import {LamboV2Router} from "./LamboV2Router.sol";
+import {LamboVEthRouter} from "./LamboVEthRouter.sol";
 
-contract V2Factory {
+contract LamboFactory {
     uint256 public tokenNonce;
     address public multiSig;
-    address payable public dexFees;
     address public immutable lamboTokenImplementation;
     address public lamboRouter;
     mapping(address => bool) public whiteList;
@@ -24,21 +22,15 @@ contract V2Factory {
     event PoolCreated(address virtualLiquidityToken, address quoteToken, address pool, uint256 virtualLiquidityAmount);
     event LiquidityAdded(address virtualLiquidityToken, address quoteToken, uint256 amountVirtualDesired, uint256 amountQuoteOptimal);
 
-    constructor(address _multiSig, address payable _dexFees, address _lamboTokenImplementation) {
+    constructor(address _multiSig, address _lamboTokenImplementation) {
         tokenNonce = 1;
         multiSig = _multiSig;
-        dexFees = _dexFees;
         lamboTokenImplementation = _lamboTokenImplementation;
     }
 
     modifier onlyWhiteListed(address virtualLiquidityToken) {
         require(whiteList[virtualLiquidityToken], "virtualLiquidityToken is not in the whitelist");
         _;
-    }
-
-    function setDexFees(address payable _dexFees) public {
-        require(msg.sender == multiSig, "Only multiSig can set dexFees");
-        dexFees = _dexFees;
     }
 
     function setLamboRouter(address _lamboRouter) public {
@@ -62,7 +54,7 @@ contract V2Factory {
         quoteToken = Clones.cloneDeterministic(lamboTokenImplementation, salt);
 
         // Initialize the cloned LamboToken
-        LamboTokenV2(quoteToken).initialize(name, tickname);
+        LamboToken(quoteToken).initialize(name, tickname);
         tokenNonce = tokenNonce + 1;
 
         emit TokenDeployed(quoteToken);
@@ -80,8 +72,7 @@ contract V2Factory {
         VirtualToken(virtualLiquidityToken).takeLoan(pool, virtualLiquidityAmount);
         IERC20(quoteToken).transfer(pool, LaunchPadUtils.TOTAL_AMOUNT_OF_QUOTE_TOKEN);
 
-        IPool(pool).mint(dexFees);
-        DexFees(payable(dexFees)).BurnOrLockedFees(address(pool));
+        IPool(pool).mint(address(0x0));
 
         emit PoolCreated(virtualLiquidityToken, quoteToken, pool, virtualLiquidityAmount);
     }
@@ -101,8 +92,7 @@ contract V2Factory {
         VirtualToken(virtualLiquidityToken).takeLoan(pool, amountVirtualDesired);
         IERC20(quoteToken).transferFrom(msg.sender, pool, amountQuoteOptimal);
 
-        IPool(pool).mint(dexFees);
-        DexFees(payable(dexFees)).BurnOrLockedFees(address(pool));
+        IPool(pool).mint(address(0x0));
 
         emit LiquidityAdded(virtualLiquidityToken, quoteToken, amountVirtualDesired, amountQuoteOptimal);
     }

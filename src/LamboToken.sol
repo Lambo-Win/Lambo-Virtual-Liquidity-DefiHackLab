@@ -11,7 +11,7 @@ import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 
 import {LaunchPadUtils} from "./Utils/LaunchPadUtils.sol";
 
-contract LamboTokenV2 is Context, IERC20, IERC20Metadata, IERC20Errors, Ownable {
+contract LamboToken is Context, IERC20, IERC20Metadata, IERC20Errors, Ownable {
     mapping(address account => uint256) private _balances;
 
     mapping(address account => mapping(address spender => uint256)) private _allowances;

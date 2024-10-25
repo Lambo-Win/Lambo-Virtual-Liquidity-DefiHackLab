@@ -16,17 +16,17 @@ contract GeneralTest is BaseTest {
     function test_createLaunchPad_exceeding_100ETH() public {
 
         vm.expectRevert("Loan limit per block exceeded");
-        factory.createLaunchPad("LamboTokenV2", "LAMBO", 300 ether + 1, address(vETH));
+        factory.createLaunchPad("LamboToken", "LAMBO", 300 ether + 1, address(vETH));
 
         vm.roll(block.number + 1);
 
-        factory.createLaunchPad("LamboTokenV2", "LAMBO", 300 ether, address(vETH));
+        factory.createLaunchPad("LamboToken", "LAMBO", 300 ether, address(vETH));
         
     }
     
     // vETH <-> Meme into Uniswap
     function test_createLaunchPad_with_virtual_token_and_buy_sell() public {
-        (address quoteToken, address pool) = factory.createLaunchPad("LamboTokenV2", "LAMBO", 10 ether, address(vETH));
+        (address quoteToken, address pool) = factory.createLaunchPad("LamboToken", "LAMBO", 10 ether, address(vETH));
         
         uint256 amountQuoteOut = lamboRouter.getBuyQuote(quoteToken, 10 ether);
         uint256 gasStart = gasleft();
@@ -57,7 +57,7 @@ contract GeneralTest is BaseTest {
 
         // vETH <-> Meme into Uniswap
     function test_createLaunchPadWithInitalBuy() public {
-        (address quoteToken, address pool, uint256 amountYOut) = lamboRouter.createLaunchPadAndInitialBuy{value: 10 ether}("LamboTokenV2", "LAMBO", 10 ether, address(vETH), 10 ether);
+        (address quoteToken, address pool, uint256 amountYOut) = lamboRouter.createLaunchPadAndInitialBuy{value: 10 ether}(address(factory), "LamboToken", "LAMBO", 10 ether, 10 ether);
   
         console2.log("amountYOut: ", amountYOut);
         vm.assertEq(IERC20(quoteToken).balanceOf(address(this)), amountYOut);
@@ -74,7 +74,7 @@ contract GeneralTest is BaseTest {
     }
 
     function test_cashIn_and_withdraw() public {
-        (address quoteToken, address pool) = factory.createLaunchPad("LamboTokenV2", "LAMBO", 10 ether, address(vETH));
+        (address quoteToken, address pool) = factory.createLaunchPad("LamboToken", "LAMBO", 10 ether, address(vETH));
         uint256 amountQuoteOut = lamboRouter.getBuyQuote(quoteToken, 10 ether);
         uint256 amountOut = lamboRouter.buyQuote{value: 10 ether}(quoteToken, 10 ether, 0);
         
@@ -90,7 +90,7 @@ contract GeneralTest is BaseTest {
     }
 
     function test_cashIn_and_withdraw_onFees() public {
-        (address quoteToken, address pool) = factory.createLaunchPad("LamboTokenV2", "LAMBO", 10 ether, address(vETH));
+        (address quoteToken, address pool) = factory.createLaunchPad("LamboToken", "LAMBO", 10 ether, address(vETH));
         uint256 amountQuoteOut = lamboRouter.getBuyQuote(quoteToken, 10 ether);
         uint256 amountOut = lamboRouter.buyQuote{value: 10 ether}(quoteToken, 10 ether, 0);
         require(amountOut == amountQuoteOut, "getBuyQuote error");

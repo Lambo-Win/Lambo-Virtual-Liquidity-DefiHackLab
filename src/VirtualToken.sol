@@ -8,16 +8,16 @@ import {LaunchPadUtils} from "./Utils/LaunchPadUtils.sol";
 
 contract VirtualToken is ERC20, ReentrancyGuard {
     address public mutiSigAdmin;
-    address public factory;
     address public underlyingToken;
     uint256 public cashOutFee;
-    uint256 public constant MAX_LOAN_PER_BLOCK = 300 ether;
     uint256 public lastLoanBlock;
     uint256 public loanedAmountThisBlock;
     uint256 public totalCashOutFeesCollected;
+    uint256 public constant MAX_LOAN_PER_BLOCK = 300 ether;
 
     mapping(address => uint256) public _debt;
     mapping(address => bool) public whiteList;
+    mapping(address => bool) public validFactories;
 
     event LoanTaken(address user, uint256 amount);
     event LoanRepaid(address user, uint256 amount);
@@ -37,8 +37,8 @@ contract VirtualToken is ERC20, ReentrancyGuard {
         _;
     }
 
-    modifier onlyFactory() {
-        require(msg.sender == factory, "Only factory can call this function");
+    modifier onlyValidFactory() {
+        require(validFactories[msg.sender], "Only valid factory can call this function");
         _;
     }
 
@@ -53,8 +53,12 @@ contract VirtualToken is ERC20, ReentrancyGuard {
         cashOutFee = 20;
     }
 
-    function updateFactory(address _factory) external onlyMutiSigAdmin {
-        factory = _factory;
+    function isValidFactory(address _factory) external view returns (bool) {
+        return validFactories[_factory];
+    }
+
+    function updateFactory(address _factory, bool isValid) external onlyMutiSigAdmin {
+        validFactories[_factory] = isValid;
     }
 
     function updateCashOutFee(uint256 _cashOutFee) external onlyMutiSigAdmin {
@@ -90,7 +94,7 @@ contract VirtualToken is ERC20, ReentrancyGuard {
         emit Unwrap(msg.sender, amountAfterFee);
     }
 
-    function takeLoan(address to, uint256 amount) external payable nonReentrant onlyFactory {
+    function takeLoan(address to, uint256 amount) external payable nonReentrant onlyValidFactory {
         if (block.number > lastLoanBlock) {
             lastLoanBlock = block.number;
             loanedAmountThisBlock = 0;
@@ -104,11 +108,11 @@ contract VirtualToken is ERC20, ReentrancyGuard {
         emit LoanTaken(to, amount);
     }
 
-    function repayLoan(uint256 amount) external nonReentrant onlyFactory {
-        _burn(msg.sender, amount);
-        _decreaseDebt(msg.sender, amount);
+    function repayLoan(address to, uint256 amount) external nonReentrant onlyValidFactory {
+        _burn(to, amount);
+        _decreaseDebt(to, amount);
 
-        emit LoanRepaid(msg.sender, amount);
+        emit LoanRepaid(to, amount);
     }
 
     function getLoanDebt(address user) external view returns (uint256) {
