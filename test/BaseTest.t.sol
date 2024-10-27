@@ -27,7 +27,10 @@ contract BaseTest is Test {
 
         lamboTokenV2 = new LamboToken();
 
-        vETH = new VirtualToken("vETH", "vETH", LaunchPadUtils.NATIVE_TOKEN, multiSigAdmin);
+        vm.startPrank(multiSigAdmin);
+        vETH = new VirtualToken("vETH", "vETH", LaunchPadUtils.NATIVE_TOKEN);
+        vm.stopPrank();
+        
         factory = new LamboFactory(
             multiSigAdmin,
             address(lamboTokenV2)

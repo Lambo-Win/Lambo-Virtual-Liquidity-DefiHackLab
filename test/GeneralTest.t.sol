@@ -13,6 +13,18 @@ contract GeneralTest is BaseTest {
         super.setUp();
     }
 
+    function test_changeOwnerToMultisigner() public {
+        address NewMultiSigAdmin = 0x9E1823aCf0D1F2706F35Ea9bc1566719B4DE54B8;
+        vm.startPrank(multiSigAdmin);
+        vETH.transferOwnership(NewMultiSigAdmin);
+        vm.stopPrank();
+
+        // check owner
+        vm.startPrank(NewMultiSigAdmin);
+        vETH.withdraw(0);
+        vm.stopPrank();
+    }
+
     function test_createLaunchPad_exceeding_100ETH() public {
 
         vm.expectRevert("Loan limit per block exceeded");

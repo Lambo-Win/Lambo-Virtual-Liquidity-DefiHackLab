@@ -21,7 +21,7 @@ contract DeployAll is Script {
         LamboToken lamboTokenV2 = new LamboToken();
         console2.log("LamboToken address:", address(lamboTokenV2));
         
-        VirtualToken vETH = new VirtualToken("vETH", "vETH", LaunchPadUtils.NATIVE_TOKEN, multiSigAdmin);
+        VirtualToken vETH = new VirtualToken("vETH", "vETH", LaunchPadUtils.NATIVE_TOKEN);
         console2.log("VirtualToken address:", address(vETH));
         vm.stopBroadcast();
 

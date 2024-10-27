@@ -5,9 +5,9 @@ import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import {LaunchPadUtils} from "./Utils/LaunchPadUtils.sol";
+import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 
-contract VirtualToken is ERC20, ReentrancyGuard {
-    address public mutiSigAdmin;
+contract VirtualToken is ERC20, ReentrancyGuard, Ownable {
     address public underlyingToken;
     uint256 public cashOutFee;
     uint256 public lastLoanBlock;
@@ -23,17 +23,12 @@ contract VirtualToken is ERC20, ReentrancyGuard {
     event LoanRepaid(address user, uint256 amount);
     event Wrap(address user, uint256 amount);
     event Unwrap(address user, uint256 amount);
-    event Withdraw(address mutiSigAdmin, uint256 amount);
+    event Withdraw(address owner, uint256 amount);
 
     error DebtOverflow(address user, uint256 debt, uint256 value);
 
     modifier onlyWhiteListed() {
         require(whiteList[msg.sender], "Only WhiteList");
-        _;
-    }
-
-    modifier onlyMutiSigAdmin() {
-        require(msg.sender == mutiSigAdmin, "Only mutiSigAdmin can call this function");
         _;
     }
 
@@ -45,31 +40,29 @@ contract VirtualToken is ERC20, ReentrancyGuard {
     constructor(
         string memory name,
         string memory symbol,
-        address _underlyingToken,
-        address _mutiSigAdmin
-    ) ERC20(name, symbol) {
+        address _underlyingToken
+    ) ERC20(name, symbol) Ownable(msg.sender) {
         underlyingToken = _underlyingToken;
-        mutiSigAdmin = _mutiSigAdmin;
-        cashOutFee = 20;
+        cashOutFee = 70;
     }
 
     function isValidFactory(address _factory) external view returns (bool) {
         return validFactories[_factory];
     }
 
-    function updateFactory(address _factory, bool isValid) external onlyMutiSigAdmin {
+    function updateFactory(address _factory, bool isValid) external onlyOwner {
         validFactories[_factory] = isValid;
     }
 
-    function updateCashOutFee(uint256 _cashOutFee) external onlyMutiSigAdmin {
+    function updateCashOutFee(uint256 _cashOutFee) external onlyOwner {
         cashOutFee = _cashOutFee;
     }
 
-    function addToWhiteList(address user) external onlyMutiSigAdmin {
+    function addToWhiteList(address user) external onlyOwner {
         whiteList[user] = true;
     }
 
-    function removeFromWhiteList(address user) external onlyMutiSigAdmin {
+    function removeFromWhiteList(address user) external onlyOwner {
         whiteList[user] = false;
     }
 
@@ -155,13 +148,13 @@ contract VirtualToken is ERC20, ReentrancyGuard {
         super._update(from, to, value);
     }
 
-    function withdraw(uint256 amount) external onlyMutiSigAdmin nonReentrant {
+    function withdraw(uint256 amount) external onlyOwner nonReentrant {
         require(amount <= totalCashOutFeesCollected, "Withdraw amount exceeds collected fees");
         require(address(this).balance >= amount, "Insufficient balance");
 
         totalCashOutFeesCollected -= amount;
-        (bool success, ) = mutiSigAdmin.call{value: amount}("");
+        (bool success, ) = owner().call{value: amount}("");
         require(success, "Transfer failed");
-        emit Withdraw(mutiSigAdmin, amount);
+        emit Withdraw(owner(), amount);
     }
 }
