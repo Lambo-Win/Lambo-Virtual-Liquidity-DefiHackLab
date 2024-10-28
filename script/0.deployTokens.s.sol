@@ -9,23 +9,17 @@ import {LaunchPadUtils} from "../src/Utils/LaunchPadUtils.sol";
 import "forge-std/console2.sol";
 
 contract DeployTokens is Script {
-    // forge script script/0.deployTokens.s.sol --rpc-url https://base-rpc.publicnode.com --broadcast -vvvv --legacy
+    // forge script script/0.deployTokens.s.sol:DeployTokens --rpc-url wss://ethereum-rpc.publicnode.com --broadcast -vvvv --legacy --verify --etherscan-api-key RTJCFXFDI87EIYGXH8BT1RJZRQ6IY85N3Q
     function run() external {
         uint256 privateKey = vm.envUint("PRIVATE_KEY");
-        address deployer = vm.addr(privateKey);
 
         vm.startBroadcast(privateKey);
-                
         LamboToken lamboTokenV2 = new LamboToken();
-        console2.log("LamboToken address:", address(lamboTokenV2));
-        
         VirtualToken vETH = new VirtualToken("vETH", "vETH", LaunchPadUtils.NATIVE_TOKEN);
-        console2.log("VirtualToken address:", address(vETH));
         vm.stopBroadcast();
 
         console2.log("LamboToken address:", address(lamboTokenV2));
         console2.log("VirtualToken address:", address(vETH));
         
-        vm.stopBroadcast();
     }
 }

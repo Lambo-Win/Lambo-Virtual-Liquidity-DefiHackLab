@@ -11,9 +11,10 @@ import {IPoolFactory} from "./interfaces/Uniswap/IPoolFactory.sol";
 import {UniswapV2Library} from "./libraries/UniswapV2Library.sol";
 import {LamboVEthRouter} from "./LamboVEthRouter.sol";
 
-contract LamboFactory {
+import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
+
+contract LamboFactory is Ownable {
     uint256 public tokenNonce;
-    address public multiSig;
     address public immutable lamboTokenImplementation;
     address public lamboRouter;
     mapping(address => bool) public whiteList;
@@ -22,9 +23,8 @@ contract LamboFactory {
     event PoolCreated(address virtualLiquidityToken, address quoteToken, address pool, uint256 virtualLiquidityAmount);
     event LiquidityAdded(address virtualLiquidityToken, address quoteToken, uint256 amountVirtualDesired, uint256 amountQuoteOptimal);
 
-    constructor(address _multiSig, address _lamboTokenImplementation) {
+    constructor(address _lamboTokenImplementation) Ownable(msg.sender) {
         tokenNonce = 1;
-        multiSig = _multiSig;
         lamboTokenImplementation = _lamboTokenImplementation;
     }
 
@@ -33,18 +33,15 @@ contract LamboFactory {
         _;
     }
 
-    function setLamboRouter(address _lamboRouter) public {
-        require(msg.sender == multiSig, "Only multiSig can set lamboRouter");
+    function setLamboRouter(address _lamboRouter) public onlyOwner {
         lamboRouter = _lamboRouter;
     }
 
-    function addVTokenWhiteList(address virtualLiquidityToken) public {
-        require(msg.sender == multiSig, "Only multiSig can add to whitelist");
+    function addVTokenWhiteList(address virtualLiquidityToken) public onlyOwner {
         whiteList[virtualLiquidityToken] = true;
     }
 
-    function removeVTokenWhiteList(address virtualLiquidityToken) public {
-        require(msg.sender == multiSig, "Only multiSig can remove from whitelist");
+    function removeVTokenWhiteList(address virtualLiquidityToken) public onlyOwner {
         whiteList[virtualLiquidityToken] = false;
     }
 

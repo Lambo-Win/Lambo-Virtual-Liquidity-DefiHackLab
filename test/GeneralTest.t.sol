@@ -25,6 +25,22 @@ contract GeneralTest is BaseTest {
         vm.stopPrank();
     }
 
+    function test_lamboFactoryChangeOwner() public {
+        address NewMultiSigAdmin = 0x9E1823aCf0D1F2706F35Ea9bc1566719B4DE54B8;
+        
+        vm.startPrank(multiSigAdmin);
+        factory.transferOwnership(NewMultiSigAdmin);
+        vm.stopPrank();
+
+        // check owner
+        vm.startPrank(NewMultiSigAdmin);
+        factory.removeVTokenWhiteList(address(vETH));
+        factory.addVTokenWhiteList(address(vETH));
+        factory.setLamboRouter(address(lamboRouter));
+        (address quoteToken, address pool) = factory.createLaunchPad("LamboToken", "LAMBO", 10 ether, address(vETH));
+        vm.stopPrank();
+    }
+
     function test_createLaunchPad_exceeding_100ETH() public {
 
         vm.expectRevert("Loan limit per block exceeded");
