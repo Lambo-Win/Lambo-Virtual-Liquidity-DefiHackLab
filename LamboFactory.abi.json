@@ -3,24 +3,56 @@
     "type": "constructor",
     "inputs": [
       {
-        "name": "_multiSig",
-        "type": "address",
-        "internalType": "address"
-      },
-      {
-        "name": "_dexFees",
-        "type": "address",
-        "internalType": "address payable"
-      },
-      {
         "name": "_lamboTokenImplementation",
         "type": "address",
         "internalType": "address"
-      },
+      }
+    ],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "addVTokenWhiteList",
+    "inputs": [
       {
-        "name": "_virtualLiquidityToken",
+        "name": "virtualLiquidityToken",
         "type": "address",
         "internalType": "address"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "addVirtualLiquidity",
+    "inputs": [
+      {
+        "name": "virtualLiquidityToken",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "quoteToken",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "amountVirtualDesired",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "amountQuoteMin",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "amountQuoteOptimal",
+        "type": "uint256",
+        "internalType": "uint256"
       }
     ],
     "stateMutability": "nonpayable"
@@ -66,19 +98,6 @@
   },
   {
     "type": "function",
-    "name": "dexFees",
-    "inputs": [],
-    "outputs": [
-      {
-        "name": "",
-        "type": "address",
-        "internalType": "address payable"
-      }
-    ],
-    "stateMutability": "view"
-  },
-  {
-    "type": "function",
     "name": "lamboRouter",
     "inputs": [],
     "outputs": [
@@ -105,7 +124,7 @@
   },
   {
     "type": "function",
-    "name": "multiSig",
+    "name": "owner",
     "inputs": [],
     "outputs": [
       {
@@ -118,14 +137,21 @@
   },
   {
     "type": "function",
-    "name": "setDexFees",
+    "name": "removeVTokenWhiteList",
     "inputs": [
       {
-        "name": "_dexFees",
+        "name": "virtualLiquidityToken",
         "type": "address",
-        "internalType": "address payable"
+        "internalType": "address"
       }
     ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "renounceOwnership",
+    "inputs": [],
     "outputs": [],
     "stateMutability": "nonpayable"
   },
@@ -157,21 +183,96 @@
   },
   {
     "type": "function",
-    "name": "virtualLiquidityToken",
-    "inputs": [],
-    "outputs": [
+    "name": "transferOwnership",
+    "inputs": [
+      {
+        "name": "newOwner",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "whiteList",
+    "inputs": [
       {
         "name": "",
         "type": "address",
         "internalType": "address"
       }
     ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "bool",
+        "internalType": "bool"
+      }
+    ],
     "stateMutability": "view"
+  },
+  {
+    "type": "event",
+    "name": "LiquidityAdded",
+    "inputs": [
+      {
+        "name": "virtualLiquidityToken",
+        "type": "address",
+        "indexed": false,
+        "internalType": "address"
+      },
+      {
+        "name": "quoteToken",
+        "type": "address",
+        "indexed": false,
+        "internalType": "address"
+      },
+      {
+        "name": "amountVirtualDesired",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      },
+      {
+        "name": "amountQuoteOptimal",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "OwnershipTransferred",
+    "inputs": [
+      {
+        "name": "previousOwner",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "newOwner",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      }
+    ],
+    "anonymous": false
   },
   {
     "type": "event",
     "name": "PoolCreated",
     "inputs": [
+      {
+        "name": "virtualLiquidityToken",
+        "type": "address",
+        "indexed": false,
+        "internalType": "address"
+      },
       {
         "name": "quoteToken",
         "type": "address",
@@ -183,6 +284,12 @@
         "type": "address",
         "indexed": false,
         "internalType": "address"
+      },
+      {
+        "name": "virtualLiquidityAmount",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
       }
     ],
     "anonymous": false
@@ -218,6 +325,28 @@
         "name": "needed",
         "type": "uint256",
         "internalType": "uint256"
+      }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "OwnableInvalidOwner",
+    "inputs": [
+      {
+        "name": "owner",
+        "type": "address",
+        "internalType": "address"
+      }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "OwnableUnauthorizedAccount",
+    "inputs": [
+      {
+        "name": "account",
+        "type": "address",
+        "internalType": "address"
       }
     ]
   }

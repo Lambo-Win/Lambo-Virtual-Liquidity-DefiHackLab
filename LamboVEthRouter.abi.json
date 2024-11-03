@@ -11,11 +11,6 @@
         "name": "_uniswapV2Factory",
         "type": "address",
         "internalType": "address"
-      },
-      {
-        "name": "_lamboFactory",
-        "type": "address",
-        "internalType": "address"
       }
     ],
     "stateMutability": "nonpayable"
@@ -71,6 +66,11 @@
     "name": "createLaunchPadAndInitialBuy",
     "inputs": [
       {
+        "name": "lamboFactory",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
         "name": "name",
         "type": "string",
         "internalType": "string"
@@ -84,11 +84,6 @@
         "name": "virtualLiquidityAmount",
         "type": "uint256",
         "internalType": "uint256"
-      },
-      {
-        "name": "virtualLiquidityToken",
-        "type": "address",
-        "internalType": "address"
       },
       {
         "name": "buyAmount",
@@ -165,19 +160,6 @@
   },
   {
     "type": "function",
-    "name": "lamboFactory",
-    "inputs": [],
-    "outputs": [
-      {
-        "name": "",
-        "type": "address",
-        "internalType": "address"
-      }
-    ],
-    "stateMutability": "view"
-  },
-  {
-    "type": "function",
     "name": "sellQuote",
     "inputs": [
       {
@@ -233,12 +215,12 @@
   },
   {
     "type": "event",
-    "name": "Swap",
+    "name": "BuyQuote",
     "inputs": [
       {
-        "name": "sender",
+        "name": "quoteToken",
         "type": "address",
-        "indexed": true,
+        "indexed": false,
         "internalType": "address"
       },
       {
@@ -248,22 +230,35 @@
         "internalType": "uint256"
       },
       {
-        "name": "amountYOut",
+        "name": "amountXOut",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "SellQuote",
+    "inputs": [
+      {
+        "name": "quoteToken",
+        "type": "address",
+        "indexed": false,
+        "internalType": "address"
+      },
+      {
+        "name": "amountYIn",
         "type": "uint256",
         "indexed": false,
         "internalType": "uint256"
       },
       {
-        "name": "vETH",
-        "type": "address",
-        "indexed": true,
-        "internalType": "address"
-      },
-      {
-        "name": "quoteToken",
-        "type": "address",
-        "indexed": true,
-        "internalType": "address"
+        "name": "amountXOut",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
       }
     ],
     "anonymous": false
