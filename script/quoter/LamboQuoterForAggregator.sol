@@ -26,10 +26,10 @@ contract LamboQuoterForAggregator {
         address meme,
         uint256 amountIn
     ) public view returns (uint256 amountOut) {
-        // v3
+        // v2
         uint256 amountOut0 = _v2(false, meme, amountIn);
         
-        // v2
+        // v3
         amountOut = _v3(false, amountOut0);
     }
 
@@ -56,6 +56,7 @@ contract LamboQuoterForAggregator {
             isBuy? veth: meme, 
             isBuy? meme: veth
         );
+
 
         // Calculate the amount of quoteToken to be received
         amountOut = UniswapV2Library.getAmountOut(amountIn, reserveIn, reserveOut);
