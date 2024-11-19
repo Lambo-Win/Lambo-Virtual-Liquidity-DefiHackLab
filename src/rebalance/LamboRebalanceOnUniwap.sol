@@ -19,6 +19,8 @@ import {IQuoter} from "../interfaces/Uniswap/IQuoter.sol";
 
 import {IDexRouter} from "../interfaces/OKX/IDexRouter.sol";
 
+import {console} from "forge-std/console.sol";
+
 
 contract LamboRebalanceOnUniwap is Initializable, UUPSUpgradeable, OwnableUpgradeable, IMorphoFlashLoanCallback {
     uint256 private constant _BUY_MASK = 1 << 255; // Mask for identifying if the swap is one-for-zero
@@ -28,8 +30,7 @@ contract LamboRebalanceOnUniwap is Initializable, UUPSUpgradeable, OwnableUpgrad
     uint160 internal constant MAX_SQRT_RATIO = 1461446703485210103287273052203988822378723970342;
 
     address public constant weth = 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2;
-    address public constant veth = 0x280A8955A11FcD81D72bA1F99d265A48ce39aC2E;
-    address public constant uniswapPool = 0x39AA9fA48FaC66AEB4A2fbfF0A91aa072C6bb4bD;
+
     address public constant morphoVault = 0xBBBBBbbBBb9cC5e90e3b3Af64bdAF62C37EEFFCb;
     address public constant quoter = 0x5e55C9e631FAE526cd4B0526C4818D6e0a9eF0e3;
 
@@ -37,16 +38,23 @@ contract LamboRebalanceOnUniwap is Initializable, UUPSUpgradeable, OwnableUpgrad
     address public constant OKXTokenApprove = 0x40aA958dd87FC8305b97f2BA922CDdCa374bcD7f;
     uint24 public constant fee = 10000;
 
-    function initialize(address _owner) public initializer {
+    address public veth;
+    address public uniswapPool;
+
+    function initialize(address _owner, address _vETH, address _uniswap) public initializer {
         __Ownable_init(_owner);
+
+        veth = _vETH;
+        uniswapPool = _uniswap;
     }
 
     function _authorizeUpgrade(address newImplementation) internal override onlyOwner {}
 
-    function extractProfit(address to) external onlyOwner {
-        uint256 balance = IERC20(weth).balanceOf(address(this));
-        require(balance > 0, "No profit to extract");
-        IERC20(weth).transfer(to, balance);
+    function extractProfit(address to, address token) external onlyOwner {
+        uint256 balance = IERC20(token).balanceOf(address(this));
+        if (balance > 0) {
+            IERC20(token).transfer(to, balance);
+        }
     }
 
     function rebalance(
@@ -103,13 +111,9 @@ contract LamboRebalanceOnUniwap is Initializable, UUPSUpgradeable, OwnableUpgrad
         uint256 amountIn,
         uint256 amountOut
     ) {
-        (uint256 wethBalance, uint256 vethBalance) = _getTokenBalances();
-        uint256 targetBalance = (wethBalance + vethBalance) / 2;
-
         address tokenIn;
         address tokenOut;
-        (tokenIn, tokenOut, amountIn) = _getTokenInOut(vethBalance, targetBalance, wethBalance);
-
+        (tokenIn, tokenOut, amountIn) = _getTokenInOut();
         (amountOut, directionMask) = _getQuoteAndDirection(tokenIn, tokenOut, amountIn);
 
         result = amountOut > amountIn;
@@ -120,7 +124,10 @@ contract LamboRebalanceOnUniwap is Initializable, UUPSUpgradeable, OwnableUpgrad
         vethBalance = IERC20(veth).balanceOf(uniswapPool);
     }
 
-    function _getTokenInOut(uint256 vethBalance, uint256 targetBalance, uint256 wethBalance) internal pure returns (address tokenIn, address tokenOut, uint256 amountIn) {
+    function _getTokenInOut() internal view returns (address tokenIn, address tokenOut, uint256 amountIn) {
+        (uint256 wethBalance, uint256 vethBalance) = _getTokenBalances();
+        uint256 targetBalance = (wethBalance + vethBalance) / 2;
+
         if (vethBalance > targetBalance) {
             amountIn = vethBalance - targetBalance;
 

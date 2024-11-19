@@ -6,19 +6,31 @@ import {IPool} from "./interfaces/Uniswap/IPool.sol";
 import {VirtualToken} from "./VirtualToken.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {LamboFactory} from "./LamboFactory.sol";
+import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 
-contract LamboVEthRouter {
+contract LamboVEthRouter is Ownable {
     address public constant NATIVE_TOKEN = 0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE;
+    uint256 public constant FeeDenominator = 10000;
 
+    uint256 public feeRate;
     address public immutable vETH;
     address public immutable uniswapV2Factory;
 
     event BuyQuote(address quoteToken, uint256 amountXIn, uint256 amountXOut);
     event SellQuote(address quoteToken, uint256 amountYIn, uint256 amountXOut);
+    event UpdateFeeRate(uint256 newFeeRate);
 
-    constructor(address _vETH, address _uniswapV2Factory) public {
+    constructor(address _vETH, address _uniswapV2Factory, address _multiSign) Ownable(_multiSign) public {
+        feeRate = 100;
+
         vETH = _vETH;
         uniswapV2Factory = _uniswapV2Factory;
+    }
+
+    function updateFeeRate(uint256 newFeeRate) external onlyOwner {
+        require(newFeeRate <= FeeDenominator, "Fee rate must be less than or equal to FeeDenominator");
+        feeRate = newFeeRate;
+        emit UpdateFeeRate(newFeeRate);
     }
 
     function createLaunchPadAndInitialBuy(
@@ -51,6 +63,7 @@ contract LamboVEthRouter {
         view 
         returns (uint256 amount) 
     {
+
         // TIPs: ETH -> vETH = 1:1
         (uint256 reserveIn, uint256 reserveOut) = UniswapV2Library.getReserves(
             uniswapV2Factory, 
@@ -59,6 +72,7 @@ contract LamboVEthRouter {
         );
 
         // Calculate the amount of Meme to be received
+        amountIn = amountIn - amountIn * feeRate / FeeDenominator;
         amount = UniswapV2Library.getAmountOut(amountIn, reserveIn, reserveOut);
     }
 
@@ -78,10 +92,8 @@ contract LamboVEthRouter {
         );
 
         // get vETH Amount
-        uint256 amountXOut = UniswapV2Library.getAmountOut(amountIn, reserveIn, reserveOut);
-
-        // vETH -> wETH
-        amount = VirtualToken(vETH).getCashOutQuote(amountXOut);
+        amount = UniswapV2Library.getAmountOut(amountIn, reserveIn, reserveOut);
+        amount = amount - amount * feeRate / FeeDenominator;
     }
 
     function buyQuote(
@@ -93,6 +105,7 @@ contract LamboVEthRouter {
         payable 
         returns (uint256 amountYOut) 
     {
+        
         amountYOut = _buyQuote(quoteToken, amountXIn, minReturn);
     }
 
@@ -131,13 +144,20 @@ contract LamboVEthRouter {
         IUniswapV2Pair(pair).swap(amount0Out, amount1Out, address(this), new bytes(0));
 
         // Convert vETH to ETH and send to the user
-        // amountXOut will get the fee
-        amountXOut = VirtualToken(vETH).cashOut(amountXOut);
-        (bool success, ) = msg.sender.call{value: amountXOut}("");
-        require(success, "Transfer failed");
+        VirtualToken(vETH).cashOut(amountXOut);
 
-        // Check if the received amount meets the minimum return requirement
+        // caculate fee
+        uint256 fee = amountXOut * feeRate / FeeDenominator;
+        amountXOut = amountXOut - fee;
+
+        // handle amountOut
         require(amountXOut >= minReturn, "MinReturn Error");
+        (bool success, ) = msg.sender.call{value: amountXOut}("");
+        require(success, "Transfer to User failed");
+   
+        // handle fee
+        (success, ) = payable(owner()).call{value: fee}("");
+        require(success, "Transfer to owner() failed");
 
         // Emit the swap event
         emit SellQuote(quoteToken, amountYIn, amountXOut);
@@ -152,7 +172,14 @@ contract LamboVEthRouter {
         returns (uint256 amountYOut) 
     {
         require(msg.value >= amountXIn, "Insufficient msg.value");
+
+        // handle fee
+        uint256 fee = amountXIn * feeRate / FeeDenominator;
+        amountXIn = amountXIn - fee;
+        (bool success, ) = payable(owner()).call{value: fee}("");
+        require(success, "Transfer to Owner failed");
         
+        // handle swap
         address pair = UniswapV2Library.pairFor(uniswapV2Factory, vETH, quoteToken);
         
         (uint256 reserveIn, uint256 reserveOut) = UniswapV2Library.getReserves(
@@ -179,8 +206,8 @@ contract LamboVEthRouter {
         require(amountYOut >= minReturn, "MinReturn Error");
 
         // Refund excess ETH if any, left 1 wei to save gas
-        if (msg.value > amountXIn + 1) {
-            payable(msg.sender).transfer(msg.value - amountXIn - 1);
+        if (msg.value > (amountXIn + fee + 1)) {
+            payable(msg.sender).transfer(msg.value - amountXIn - fee - 1);
         }
         
         emit BuyQuote(quoteToken, amountXIn, amountYOut);

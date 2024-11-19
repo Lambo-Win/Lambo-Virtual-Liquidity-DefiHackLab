@@ -9,6 +9,9 @@ import "forge-std/console.sol";
 contract DeployLamboRebalanceOnUniswap is Script {
     // forge script script/3.deployRebalacne.s.sol:DeployLamboRebalanceOnUniswap --rpc-url https://eth.llamarpc.com --broadcast -vvvv --legacy
     function run() external {
+
+        address vETH = address(0);
+        address uniswapPool = address(0);
         uint256 privateKey = vm.envUint("PRIVATE_KEY");
 
         address deployerAddress = vm.addr(privateKey);
@@ -16,7 +19,7 @@ contract DeployLamboRebalanceOnUniswap is Script {
         vm.startBroadcast(privateKey);
 
         LamboRebalanceOnUniwap lamboRebalance = new LamboRebalanceOnUniwap();
-        lamboRebalance.initialize(deployerAddress);
+        lamboRebalance.initialize(deployerAddress, address(vETH), address(uniswapPool));
 
         console.log("LamboRebalanceOnUniwap address:", address(lamboRebalance));
 

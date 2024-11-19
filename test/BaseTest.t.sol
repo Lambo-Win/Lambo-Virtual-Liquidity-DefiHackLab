@@ -34,14 +34,13 @@ contract BaseTest is Test {
             address(lamboTokenV2)
         );
         vm.stopPrank();
-        
-
-
+         
         aggregatorRouter = new AggregationRouterV6(IWETH(LaunchPadUtils.WETH));
 
         lamboRouter = new LamboVEthRouter(
             address(vETH),
-            address(LaunchPadUtils.UNISWAP_POOL_FACTORY_)   
+            address(LaunchPadUtils.UNISWAP_POOL_FACTORY_),
+            multiSigAdmin
         );
 
         vm.startPrank(multiSigAdmin);

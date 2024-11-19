@@ -14,7 +14,6 @@ import {LamboVEthRouter} from "./LamboVEthRouter.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 
 contract LamboFactory is Ownable {
-    uint256 public tokenNonce;
     address public immutable lamboTokenImplementation;
     address public lamboRouter;
     mapping(address => bool) public whiteList;
@@ -24,7 +23,6 @@ contract LamboFactory is Ownable {
     event LiquidityAdded(address virtualLiquidityToken, address quoteToken, uint256 amountVirtualDesired, uint256 amountQuoteOptimal);
 
     constructor(address _lamboTokenImplementation) Ownable(msg.sender) {
-        tokenNonce = 1;
         lamboTokenImplementation = _lamboTokenImplementation;
     }
 
@@ -47,12 +45,10 @@ contract LamboFactory is Ownable {
 
     function _deployLamboToken(string memory name, string memory tickname) internal returns (address quoteToken) {
         // Create a deterministic clone of the LamboToken implementation
-        bytes32 salt = keccak256(abi.encodePacked(name, tickname, tokenNonce));
-        quoteToken = Clones.cloneDeterministic(lamboTokenImplementation, salt);
+        quoteToken = Clones.clone(lamboTokenImplementation);
 
         // Initialize the cloned LamboToken
         LamboToken(quoteToken).initialize(name, tickname);
-        tokenNonce = tokenNonce + 1;
 
         emit TokenDeployed(quoteToken);
     }
@@ -69,28 +65,12 @@ contract LamboFactory is Ownable {
         VirtualToken(virtualLiquidityToken).takeLoan(pool, virtualLiquidityAmount);
         IERC20(quoteToken).transfer(pool, LaunchPadUtils.TOTAL_AMOUNT_OF_QUOTE_TOKEN);
 
-        IPool(pool).mint(address(0x0));
+        // Directly minting to address(0) will cause Dexscreener to not display LP being burned
+        // So, we have to mint to address(this), then send it to address(0).
+        IPool(pool).mint(address(this));
+        IERC20(pool).transfer(address(0), IERC20(pool).balanceOf(address(this)));
 
         emit PoolCreated(virtualLiquidityToken, quoteToken, pool, virtualLiquidityAmount);
     }
 
-    function addVirtualLiquidity(
-        address virtualLiquidityToken,
-        address quoteToken,
-        uint256 amountVirtualDesired,
-        uint256 amountQuoteMin
-    ) public onlyWhiteListed(virtualLiquidityToken) returns (uint256 amountQuoteOptimal) {
-        address pool = UniswapV2Library.pairFor(LaunchPadUtils.UNISWAP_POOL_FACTORY_, virtualLiquidityToken, quoteToken);
-        (uint256 reserveA, uint256 reserveB) = UniswapV2Library.getReserves(LaunchPadUtils.UNISWAP_POOL_FACTORY_, virtualLiquidityToken, quoteToken);
-
-        amountQuoteOptimal = UniswapV2Library.quote(amountVirtualDesired, reserveA, reserveB);
-        require(amountQuoteOptimal >= amountQuoteMin, "LamboFactory addVirtualLiquidity: INSUFFICIENT_Quote_AMOUNT");
-
-        VirtualToken(virtualLiquidityToken).takeLoan(pool, amountVirtualDesired);
-        IERC20(quoteToken).transferFrom(msg.sender, pool, amountQuoteOptimal);
-
-        IPool(pool).mint(address(0x0));
-
-        emit LiquidityAdded(virtualLiquidityToken, quoteToken, amountVirtualDesired, amountQuoteOptimal);
-    }
 }

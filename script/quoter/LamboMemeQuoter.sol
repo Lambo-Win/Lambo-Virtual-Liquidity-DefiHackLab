@@ -5,7 +5,6 @@ pragma solidity ^0.8.20;
 import {IPool} from "../../src/interfaces/Uniswap/IPool.sol";
 
 contract LamboMemeQuoter {
-
     function getUniswapPoolReserves(address[] memory pools) public view returns (bytes memory) {
         uint256[] memory reserves = new uint256[](pools.length * 2);
         

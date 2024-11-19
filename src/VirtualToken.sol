@@ -8,9 +8,8 @@ import {LaunchPadUtils} from "./Utils/LaunchPadUtils.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 
 contract VirtualToken is ERC20, ReentrancyGuard, Ownable {
-    address public underlyingToken;
-    uint256 public cashOutFee;
     uint256 public lastLoanBlock;
+    address public underlyingToken;
     uint256 public loanedAmountThisBlock;
     uint256 public totalCashOutFeesCollected;
     uint256 public constant MAX_LOAN_PER_BLOCK = 300 ether;
@@ -21,8 +20,8 @@ contract VirtualToken is ERC20, ReentrancyGuard, Ownable {
 
     event LoanTaken(address user, uint256 amount);
     event LoanRepaid(address user, uint256 amount);
-    event Wrap(address user, uint256 amount);
-    event Unwrap(address user, uint256 amount);
+    event CashIn(address user, uint256 amount);
+    event CashOut(address user, uint256 amount);
     event Withdraw(address owner, uint256 amount);
 
     error DebtOverflow(address user, uint256 debt, uint256 value);
@@ -43,7 +42,6 @@ contract VirtualToken is ERC20, ReentrancyGuard, Ownable {
         address _underlyingToken
     ) ERC20(name, symbol) Ownable(msg.sender) {
         underlyingToken = _underlyingToken;
-        cashOutFee = 70;
     }
 
     function isValidFactory(address _factory) external view returns (bool) {
@@ -54,10 +52,6 @@ contract VirtualToken is ERC20, ReentrancyGuard, Ownable {
         validFactories[_factory] = isValid;
     }
 
-    function updateCashOutFee(uint256 _cashOutFee) external onlyOwner {
-        cashOutFee = _cashOutFee;
-    }
-
     function addToWhiteList(address user) external onlyOwner {
         whiteList[user] = true;
     }
@@ -66,25 +60,16 @@ contract VirtualToken is ERC20, ReentrancyGuard, Ownable {
         whiteList[user] = false;
     }
 
-    function getCashOutQuote(uint256 amount) public view returns (uint256 amountAfterFee) {
-        uint256 fee = (amount * cashOutFee) / 10000;
-        amountAfterFee = amount - fee;
-    }
-
     function cashIn() external payable onlyWhiteListed {
         _transferAssetFromUser(msg.value);
         _mint(msg.sender, msg.value);
-        emit Wrap(msg.sender, msg.value);
+        emit CashIn(msg.sender, msg.value);
     }
 
-    function cashOut(uint256 amount) external onlyWhiteListed returns (uint256 amountAfterFee) {
-        uint256 fee = (amount * cashOutFee) / 10000;
-        totalCashOutFeesCollected += fee;
-        amountAfterFee = amount - fee;
-
+    function cashOut(uint256 amount) external onlyWhiteListed {
         _burn(msg.sender, amount);
-        _transferAssetToUser(amountAfterFee);
-        emit Unwrap(msg.sender, amountAfterFee);
+        _transferAssetToUser(amount);
+        emit CashOut(msg.sender, amount);
     }
 
     function takeLoan(address to, uint256 amount) external payable nonReentrant onlyValidFactory {
@@ -101,6 +86,9 @@ contract VirtualToken is ERC20, ReentrancyGuard, Ownable {
         emit LoanTaken(to, amount);
     }
 
+    /**
+     * @notice This function is currently unused.
+     */
     function repayLoan(address to, uint256 amount) external nonReentrant onlyValidFactory {
         _burn(to, amount);
         _decreaseDebt(to, amount);
@@ -146,15 +134,5 @@ contract VirtualToken is ERC20, ReentrancyGuard, Ownable {
         }
 
         super._update(from, to, value);
-    }
-
-    function withdraw(uint256 amount) external onlyOwner nonReentrant {
-        require(amount <= totalCashOutFeesCollected, "Withdraw amount exceeds collected fees");
-        require(address(this).balance >= amount, "Insufficient balance");
-
-        totalCashOutFeesCollected -= amount;
-        (bool success, ) = owner().call{value: amount}("");
-        require(success, "Transfer failed");
-        emit Withdraw(owner(), amount);
     }
 }

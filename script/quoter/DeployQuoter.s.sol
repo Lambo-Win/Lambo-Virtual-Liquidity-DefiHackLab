@@ -15,8 +15,8 @@ contract DeployQuoter is Script {
 
         vm.startBroadcast(privateKey);
 
-        LamboQuoterPathFor1inchV6 lamQuoterPathAggregator = new LamboQuoterPathFor1inchV6();
-         console.log("LamboMemeQuoter address:", address(lamQuoterPathAggregator));
+        // LamboQuoterPathFor1inchV6 lamQuoterPathAggregator = new LamboQuoterPathFor1inchV6();
+        //  console.log("LamboMemeQuoter address:", address(lamQuoterPathAggregator));
 
         // LamboMemeQuoter lamboMemeQuoter = new LamboMemeQuoter();
         // console.log("LamboMemeQuoter address:", address(lamboMemeQuoter));

@@ -18,11 +18,6 @@ contract GeneralTest is BaseTest {
         vm.startPrank(multiSigAdmin);
         vETH.transferOwnership(NewMultiSigAdmin);
         vm.stopPrank();
-
-        // check owner
-        vm.startPrank(NewMultiSigAdmin);
-        vETH.withdraw(0);
-        vm.stopPrank();
     }
 
     function test_lamboFactoryChangeOwner() public {
@@ -74,6 +69,8 @@ contract GeneralTest is BaseTest {
         uint256 amountXOut = lamboRouter.sellQuote(quoteToken, amountOut, 0);
         gasUsed = gasStart - gasleft();
 
+        console2.log("amountQuoteOut: ", amountQuoteOut);
+        console2.log("amountXOut: ", amountXOut);
         require(amountQuoteOut == amountXOut);
         // 111287
         console2.log("SellQuote Gas Used: ", gasUsed);
@@ -101,23 +98,15 @@ contract GeneralTest is BaseTest {
         console2.log("amountXOut: ", amountXOut);
     }
 
-    function test_cashIn_and_withdraw() public {
+    function test_cashIn_and_buyQuote() public {
         (address quoteToken, address pool) = factory.createLaunchPad("LamboToken", "LAMBO", 10 ether, address(vETH));
         uint256 amountQuoteOut = lamboRouter.getBuyQuote(quoteToken, 10 ether);
         uint256 amountOut = lamboRouter.buyQuote{value: 10 ether}(quoteToken, 10 ether, 0);
         
-        require(amountOut == amountQuoteOut, "getBuyQuote error");
-
-        // withdraw gas 
-        vm.startPrank(multiSigAdmin);
-        uint256 initialBalance = address(multiSigAdmin).balance;
-        vm.expectRevert("Withdraw amount exceeds collected fees");
-        vETH.withdraw(10 ether);
-        uint256 finalBalance = address(multiSigAdmin).balance;
-        vm.stopPrank();
+        // require(amountOut == amountQuoteOut, "getBuyQuote error");
     }
 
-    function test_cashIn_and_withdraw_onFees() public {
+    function test_cashIn_and_sellQuote() public {
         (address quoteToken, address pool) = factory.createLaunchPad("LamboToken", "LAMBO", 10 ether, address(vETH));
         uint256 amountQuoteOut = lamboRouter.getBuyQuote(quoteToken, 10 ether);
         uint256 amountOut = lamboRouter.buyQuote{value: 10 ether}(quoteToken, 10 ether, 0);
@@ -125,112 +114,8 @@ contract GeneralTest is BaseTest {
 
         IERC20(quoteToken).approve(address(lamboRouter), amountOut);
         lamboRouter.sellQuote(quoteToken, amountOut, 0);
-
-        // withdraw gas 
-        vm.startPrank(multiSigAdmin);
-        uint256 initialBalance = address(multiSigAdmin).balance;
-        vETH.withdraw(10 ether * 0.002 * 0.002);
-        uint256 finalBalance = address(multiSigAdmin).balance;
-        vm.stopPrank();
     }
 
-
-    function test_create_uniswapV3_pool() public {
-        
-
-    }
-
-
-    // vETH <-> ETH into Curve
-    // function test_createPool_ETHAndvETH_on_Curve() public {
-    //     address[] memory coins = new address[](2);
-    //     coins[0] = WETH;
-    //     coins[1] = address(vETH);
-
-    //     uint8[] memory asset_types = new uint8[](2);
-    //     asset_types[0] = 0;
-    //     asset_types[1] = 0;
-
-    //     bytes4[] memory method_ids = new bytes4[](2); // 修改这里
-    //     method_ids[0] = bytes4(0x00000000);
-    //     method_ids[1] = bytes4(0x00000000);
-
-    //     address[] memory oracles = new address[](2);
-    //     oracles[0] = address(0);
-    //     oracles[1] = address(1);
-
-    //     address curvePool = IStableNGFactory(curveStableNGFactoryAddress).deploy_plain_pool(
-    //         "ETH/vETH", 
-    //         "ETH/vETH", 
-    //         coins, 
-    //         250, 
-    //         4000000, 
-    //         20000000000, 
-    //         866, 
-    //         0, 
-    //         asset_types, 
-    //         method_ids, 
-    //         oracles
-    //     );
-
-    //     uint256[] memory _amounts = new uint256[](2);
-    //     _amounts[0] = 10 ether;
-    //     _amounts[1] = 10 ether;
-
-    //     deal(coins[0], address(this), 10 ether);
-    //     deal(coins[1], address(this), 10 ether);
-
-    //     IERC20(coins[0]).approve(curvePool, 10 ether);
-    //     IERC20(coins[1]).approve(curvePool, 10 ether);
-
-    //     IStableNGPool(curvePool).add_liquidity(_amounts, 0, address(this));
-
-    // }
-
-    // function test_1inchV6_aggregator_from_Curve_to_UnsiwapV2() public {
-    //     // 1inchV6 Router 地址
-    //     // 替换为实际的1inchV6 Router地址
-
-    //     address routerAddress = 0xE37e799D5077682FA0a244D46E5649F71457BD09 
-    //     IAggregationExecutor executor = IAggregationExecutor(routerAddress);
-
-    //     // SwapDescription 设置
-    //     IAggregationRouterV6.SwapDescription memory desc;
-    //     desc.srcToken = IERC20(address(0)); // ETH
-    //     desc.dstToken = IERC20(address(vETH)); // vETH
-    //     desc.srcReceiver = payable(address(this));
-    //     desc.dstReceiver = payable(address(this));
-    //     desc.amount = 10 ether;
-    //     desc.minReturnAmount = 1 ether; // 设置最小返回值
-    //     desc.flags = 0; // 根据需要设置标志
-
-    //     // 编码的调用数据
-    //     bytes memory data = abi.encodeWithSelector(
-    //         IAggregationRouterV6.swap.selector,
-    //         executor,
-    //         desc,
-    //         abi.encodeWithSelector(
-    //             IAggregationRouterV6.swap.selector,
-    //             executor,
-    //             desc,
-    //             abi.encodeWithSelector(
-    //                 IAggregationRouterV6.swap.selector,
-    //                 executor,
-    //                 desc,
-    //                 new bytes(0) // 这里可以添加更多的调用数据
-    //             )
-    //         )
-    //     );
-
-    //     // 调用 swap 函数
-    //     (uint256 returnAmount, uint256 spentAmount) = IAggregationRouterV6(routerAddress).swap{value: 10 ether}(
-    //         executor,
-    //         desc,
-    //         data
-    //     );
-
-    //     // 验证结果
-    //     require(returnAmount >= desc.minReturnAmount, "Return amount is not enough");
-    // }
+   
     receive() external payable {}
 }

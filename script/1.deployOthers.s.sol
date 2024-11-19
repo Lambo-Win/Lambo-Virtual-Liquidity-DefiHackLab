@@ -16,6 +16,7 @@ contract DeployAll is Script {
     function run() external {
         uint256 privateKey = vm.envUint("PRIVATE_KEY");
 
+        address multiSign = 0x9E1823aCf0D1F2706F35Ea9bc1566719B4DE54B8;
         LamboToken lamboTokenV2 = LamboToken(0x6B7e633FBDAf237bcFB8176BE04B0DD72dDa3B3A);
         VirtualToken vETH = VirtualToken(0x280A8955A11FcD81D72bA1F99d265A48ce39aC2E);
 
@@ -24,7 +25,8 @@ contract DeployAll is Script {
 
         LamboVEthRouter lamboRouter = new LamboVEthRouter(
             address(vETH),
-            address(LaunchPadUtils.UNISWAP_POOL_FACTORY_)
+            address(LaunchPadUtils.UNISWAP_POOL_FACTORY_),
+            multiSign
         );
 
         vm.stopBroadcast();
