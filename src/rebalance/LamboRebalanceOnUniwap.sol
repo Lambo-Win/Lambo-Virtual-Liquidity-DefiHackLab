@@ -113,6 +113,8 @@ contract LamboRebalanceOnUniwap is Initializable, UUPSUpgradeable, OwnableUpgrad
             tokenIn = veth;
             tokenOut = weth;
         }
+
+        require(amountIn > 0, "amountIn must be greater than zero");
     }
 
     function _getQuoteAndDirection(address tokenIn, address tokenOut, uint256 amountIn) internal view returns (uint256 amountOut, uint256 directionMask) {

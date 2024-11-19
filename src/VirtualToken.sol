@@ -105,6 +105,7 @@ contract VirtualToken is ERC20, ReentrancyGuard, Ownable {
     }
 
     function _decreaseDebt(address user, uint256 amount) internal {
+        require(_debt[user] >= amount, "Decrease amount exceeds current debt");
         _debt[user] -= amount;
     }
 
