@@ -33,6 +33,8 @@ contract GeneralTest is BaseTest {
         factory.addVTokenWhiteList(address(vETH));
         factory.setLamboRouter(address(lamboRouter));
         (address quoteToken, address pool) = factory.createLaunchPad("LamboToken", "LAMBO", 10 ether, address(vETH));
+        (address quoteToken2, address pool2) = factory.createLaunchPad("LamboToken", "LAMBO", 10 ether, address(vETH));
+ 
         vm.stopPrank();
     }
 
@@ -58,7 +60,11 @@ contract GeneralTest is BaseTest {
 
         require(amountOut == amountQuoteOut, "getBuyQuote error");
 
-        // 123544
+        // Check buy fee
+        uint256 fee = 10 ether * lamboRouter.feeRate() / lamboRouter.FeeDenominator();
+        uint256 multisigBalanceBefore = address(multiSigAdmin).balance;
+        console2.log("BuyQuote Fee: ", fee);
+
         console2.log("BuyQuote Gas Used: ", gasUsed);
         vm.assertEq(IERC20(quoteToken).balanceOf(address(this)), amountOut);
 
@@ -72,15 +78,20 @@ contract GeneralTest is BaseTest {
         console2.log("amountQuoteOut: ", amountQuoteOut);
         console2.log("amountXOut: ", amountXOut);
         require(amountQuoteOut == amountXOut);
-        // 111287
-        console2.log("SellQuote Gas Used: ", gasUsed);
 
-        // nearly 0.003
+        // Check sell fee
+        fee = amountXOut * lamboRouter.FeeDenominator() / (  lamboRouter.FeeDenominator() - lamboRouter.feeRate() ) - amountXOut;
+        console2.log("SellQuote Fee: ", fee);
+
+        // Check multisig balance
+        uint256 multisigBalanceAfter = address(multiSigAdmin).balance;
+        require(multisigBalanceAfter == multisigBalanceBefore + fee, "Fee not transferred to multisig");
+
+        console2.log("SellQuote Gas Used: ", gasUsed);
         console2.log("amountXOut: ", amountXOut);
-        
     }
 
-        // vETH <-> Meme into Uniswap
+    // vETH <-> Meme into Uniswap
     function test_createLaunchPadWithInitalBuy() public {
         (address quoteToken, address pool, uint256 amountYOut) = lamboRouter.createLaunchPadAndInitialBuy{value: 10 ether}(address(factory), "LamboToken", "LAMBO", 10 ether, 10 ether);
   
@@ -91,10 +102,7 @@ contract GeneralTest is BaseTest {
         uint256 gasStart = gasleft();
         uint256 amountXOut = lamboRouter.sellQuote(quoteToken, amountYOut, 0);
         uint256 gasUsed = gasStart - gasleft();
-        // 111287
         console2.log("SellQuote Gas Used: ", gasUsed);
-
-        // nearly 0.003
         console2.log("amountXOut: ", amountXOut);
     }
 
@@ -102,9 +110,7 @@ contract GeneralTest is BaseTest {
         (address quoteToken, address pool) = factory.createLaunchPad("LamboToken", "LAMBO", 10 ether, address(vETH));
         uint256 amountQuoteOut = lamboRouter.getBuyQuote(quoteToken, 10 ether);
         uint256 amountOut = lamboRouter.buyQuote{value: 10 ether}(quoteToken, 10 ether, 0);
-        
-        // require(amountOut == amountQuoteOut, "getBuyQuote error");
-    }
+       }
 
     function test_cashIn_and_sellQuote() public {
         (address quoteToken, address pool) = factory.createLaunchPad("LamboToken", "LAMBO", 10 ether, address(vETH));
@@ -116,6 +122,5 @@ contract GeneralTest is BaseTest {
         lamboRouter.sellQuote(quoteToken, amountOut, 0);
     }
 
-   
     receive() external payable {}
 }
