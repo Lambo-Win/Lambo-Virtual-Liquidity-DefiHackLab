@@ -5,22 +5,14 @@ import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
-
 import "../interfaces/Curve/IStableNGPool.sol";
-
 import {IMorpho} from "@morpho/interfaces/IMorpho.sol";
 import {IMorphoFlashLoanCallback} from "@morpho/interfaces/IMorphoCallbacks.sol";
-
 import {VirtualToken} from "../VirtualToken.sol";
-
 import {IWETH} from "../interfaces/IWETH.sol";
-
 import {IQuoter} from "../interfaces/Uniswap/IQuoter.sol";
-
 import {IDexRouter} from "../interfaces/OKX/IDexRouter.sol";
-
 import {console} from "forge-std/console.sol";
-
 
 contract LamboRebalanceOnUniwap is Initializable, UUPSUpgradeable, OwnableUpgradeable, IMorphoFlashLoanCallback {
     uint256 private constant _BUY_MASK = 1 << 255; // Mask for identifying if the swap is one-for-zero
@@ -30,10 +22,8 @@ contract LamboRebalanceOnUniwap is Initializable, UUPSUpgradeable, OwnableUpgrad
     uint160 internal constant MAX_SQRT_RATIO = 1461446703485210103287273052203988822378723970342;
 
     address public constant weth = 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2;
-
     address public constant morphoVault = 0xBBBBBbbBBb9cC5e90e3b3Af64bdAF62C37EEFFCb;
     address public constant quoter = 0x5e55C9e631FAE526cd4B0526C4818D6e0a9eF0e3;
-
     address public constant OKXRouter = 0x7D0CcAa3Fac1e5A943c5168b6CEd828691b46B36;
     address public constant OKXTokenApprove = 0x40aA958dd87FC8305b97f2BA922CDdCa374bcD7f;
     uint24 public constant fee = 10000;
@@ -43,7 +33,6 @@ contract LamboRebalanceOnUniwap is Initializable, UUPSUpgradeable, OwnableUpgrad
 
     function initialize(address _owner, address _vETH, address _uniswap) public initializer {
         __Ownable_init(_owner);
-
         veth = _vETH;
         uniswapPool = _uniswap;
     }
@@ -57,16 +46,10 @@ contract LamboRebalanceOnUniwap is Initializable, UUPSUpgradeable, OwnableUpgrad
         }
     }
 
-    function rebalance(
-        uint256 directionMask,
-        uint256 amountIn,
-        uint256 amountOut
-    ) external {
+    function rebalance(uint256 directionMask, uint256 amountIn, uint256 amountOut) external {
         uint256 balanceBefore = IERC20(weth).balanceOf(address(this));
-        
         bytes memory data = abi.encode(directionMask, amountIn, amountOut);
         IMorpho(morphoVault).flashLoan(weth, amountIn, data);
-        
         uint256 balanceAfter = IERC20(weth).balanceOf(address(this));
         uint256 profit = balanceAfter - balanceBefore;
         require(profit > 0, "No profit made");
@@ -74,14 +57,13 @@ contract LamboRebalanceOnUniwap is Initializable, UUPSUpgradeable, OwnableUpgrad
 
     function onMorphoFlashLoan(uint256 assets, bytes calldata data) external {
         require(msg.sender == address(morphoVault), "Caller is not morphoVault");
-
         (uint256 directionMask, uint256 amountIn, uint256 amountOut) = abi.decode(data, (uint256, uint256, uint256));
         require(amountIn == assets, "Amount in does not match assets");
 
         uint256 _v3pool = uint256(uint160(uniswapPool)) | (directionMask);
         uint256[] memory pools = new uint256[](1);
         pools[0] = _v3pool;
-        
+
         if (directionMask == _BUY_MASK) {
             _executeBuy(amountIn, pools);
         } else {
@@ -105,17 +87,11 @@ contract LamboRebalanceOnUniwap is Initializable, UUPSUpgradeable, OwnableUpgrad
         IDexRouter(OKXRouter).uniswapV3SwapTo(uint256(uint160(address(this))), amountIn, 0, pools);
     }
 
-    function previewRebalance() public view returns (
-        bool result,
-        uint256 directionMask,
-        uint256 amountIn,
-        uint256 amountOut
-    ) {
+    function previewRebalance() public view returns (bool result, uint256 directionMask, uint256 amountIn, uint256 amountOut) {
         address tokenIn;
         address tokenOut;
         (tokenIn, tokenOut, amountIn) = _getTokenInOut();
         (amountOut, directionMask) = _getQuoteAndDirection(tokenIn, tokenOut, amountIn);
-
         result = amountOut > amountIn;
     }
 
@@ -130,12 +106,10 @@ contract LamboRebalanceOnUniwap is Initializable, UUPSUpgradeable, OwnableUpgrad
 
         if (vethBalance > targetBalance) {
             amountIn = vethBalance - targetBalance;
-
             tokenIn = weth;
             tokenOut = veth;
         } else {
             amountIn = wethBalance - targetBalance;
-
             tokenIn = veth;
             tokenOut = weth;
         }
@@ -152,7 +126,6 @@ contract LamboRebalanceOnUniwap is Initializable, UUPSUpgradeable, OwnableUpgrad
                 sqrtPriceLimitX96: 0
             })
         );
-
         directionMask = (tokenIn == weth) ? _BUY_MASK : _SELL_MASK;
     }
 
