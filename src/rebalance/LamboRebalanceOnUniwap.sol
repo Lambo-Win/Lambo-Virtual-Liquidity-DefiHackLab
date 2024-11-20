@@ -26,13 +26,15 @@ contract LamboRebalanceOnUniwap is Initializable, UUPSUpgradeable, OwnableUpgrad
     address public constant quoter = 0x5e55C9e631FAE526cd4B0526C4818D6e0a9eF0e3;
     address public constant OKXRouter = 0x7D0CcAa3Fac1e5A943c5168b6CEd828691b46B36;
     address public constant OKXTokenApprove = 0x40aA958dd87FC8305b97f2BA922CDdCa374bcD7f;
-    uint24 public constant fee = 10000;
 
     address public veth;
     address public uniswapPool;
+    uint24 public fee;
 
-    function initialize(address _owner, address _vETH, address _uniswap) public initializer {
+    function initialize(address _owner, address _vETH, address _uniswap, uint24 _fee) public initializer {
         __Ownable_init(_owner);
+
+        fee = _fee;
         veth = _vETH;
         uniswapPool = _uniswap;
     }
@@ -123,7 +125,7 @@ contract LamboRebalanceOnUniwap is Initializable, UUPSUpgradeable, OwnableUpgrad
                 tokenIn: tokenIn,
                 tokenOut: tokenOut,
                 amountIn: amountIn,
-                fee: 10000,
+                fee: fee,
                 pool: uniswapPool,
                 sqrtPriceLimitX96: 0
             })

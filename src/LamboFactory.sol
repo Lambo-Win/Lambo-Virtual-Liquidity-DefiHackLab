@@ -61,7 +61,7 @@ contract LamboFactory is Ownable {
         IERC20(quoteToken).transfer(pool, LaunchPadUtils.TOTAL_AMOUNT_OF_QUOTE_TOKEN);
 
         // Directly minting to address(0) will cause Dexscreener to not display LP being burned
-        // So, we have to mint to address(this), then send it to address(0).
+        // So, we have to mint to address(this), then send it to address(0).        
         IPool(pool).mint(address(this));
         IERC20(pool).transfer(address(0), IERC20(pool).balanceOf(address(this)));
 

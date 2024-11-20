@@ -32,6 +32,8 @@ contract RebalanceTest is Test {
         vm.createSelectFork("https://rpc.ankr.com/eth");
         lamboRebalance = new LamboRebalanceOnUniwap();
 
+        uint24 fee = 3000;
+
         vm.startPrank(multiSign);
         VETH = address(new VirtualToken("vETH", "vETH", LaunchPadUtils.NATIVE_TOKEN));
         VirtualToken(VETH).addToWhiteList(address(lamboRebalance));
@@ -41,8 +43,7 @@ contract RebalanceTest is Test {
         // prepare uniswapV3 pool(VETH <-> WETH)
         _createUniswapPool();
 
-        lamboRebalance.initialize(address(this), address(VETH), address(uniswapPool));
-
+        lamboRebalance.initialize(address(this), address(VETH), address(uniswapPool), fee);
     }
 
     function _createUniswapPool() internal {
@@ -134,10 +135,10 @@ contract RebalanceTest is Test {
         // before_uniswapPoolVETHBalance:  33469956719686937289
         // after_uniswapPoolWETHBalance:  449788833045085369301
         // after_uniswapPoolVETHBalance:  452734978359843468645
-        // console.log("before_uniswapPoolWETHBalance: ", before_uniswapPoolWETHBalance);
-        // console.log("before_uniswapPoolVETHBalance: ", before_uniswapPoolVETHBalance);
-        // console.log("after_uniswapPoolWETHBalance: ", after_uniswapPoolWETHBalance);
-        // console.log("after_uniswapPoolVETHBalance: ", after_uniswapPoolVETHBalance);
+        console.log("before_uniswapPoolWETHBalance: ", before_uniswapPoolWETHBalance);
+        console.log("before_uniswapPoolVETHBalance: ", before_uniswapPoolVETHBalance);
+        console.log("after_uniswapPoolWETHBalance: ", after_uniswapPoolWETHBalance);
+        console.log("after_uniswapPoolVETHBalance: ", after_uniswapPoolVETHBalance);
 
         require(((before_uniswapPoolWETHBalance + before_uniswapPoolVETHBalance) - (after_uniswapPoolWETHBalance + after_uniswapPoolVETHBalance) == (finalBalance - initialBalance)), "Rebalance Profit comes from pool's rebalance");
     }

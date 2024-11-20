@@ -186,7 +186,7 @@ contract LamboVEthRouter is Ownable {
         
         // handle swap
         address pair = UniswapV2Library.pairFor(uniswapV2Factory, vETH, quoteToken);
-        
+
         (uint256 reserveIn, uint256 reserveOut) = UniswapV2Library.getReserves(
             uniswapV2Factory, 
             vETH, 
@@ -207,10 +207,6 @@ contract LamboVEthRouter is Ownable {
             : (amountYOut, uint256(0));
         IUniswapV2Pair(pair).swap(amount0Out, amount1Out, msg.sender, new bytes(0));
 
-        // Check if the received amount meets the minimum return requirement
-        require(amountYOut >= minReturn, "MinReturn Error");
-
-        // Refund excess ETH if any, left 1 wei to save gas
         if (msg.value > (amountXIn + fee + 1)) {
             payable(msg.sender).transfer(msg.value - amountXIn - fee - 1);
         }
