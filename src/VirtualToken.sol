@@ -89,8 +89,8 @@ contract VirtualToken is ERC20, Ownable {
      * @notice This function is currently unused.
      */
     function repayLoan(address to, uint256 amount) external onlyValidFactory {
-        _burn(to, amount);
         _decreaseDebt(to, amount);
+        _burn(to, amount);
         emit LoanRepaid(to, amount);
     }
 
