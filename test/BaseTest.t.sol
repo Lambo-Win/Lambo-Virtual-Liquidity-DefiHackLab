@@ -47,7 +47,6 @@ contract BaseTest is Test {
         vETH.updateFactory(address(factory), true);
         vETH.addToWhiteList(address(lamboRouter));
         
-        factory.setLamboRouter(address(lamboRouter));
         factory.addVTokenWhiteList(address(vETH));
         vm.stopPrank();
     }

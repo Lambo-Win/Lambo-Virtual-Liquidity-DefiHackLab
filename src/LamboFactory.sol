@@ -15,7 +15,6 @@ import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 
 contract LamboFactory is Ownable {
     address public immutable lamboTokenImplementation;
-    address public lamboRouter;
     mapping(address => bool) public whiteList;
 
     event TokenDeployed(address quoteToken);
@@ -29,10 +28,6 @@ contract LamboFactory is Ownable {
     modifier onlyWhiteListed(address virtualLiquidityToken) {
         require(whiteList[virtualLiquidityToken], "virtualLiquidityToken is not in the whitelist");
         _;
-    }
-
-    function setLamboRouter(address _lamboRouter) public onlyOwner {
-        lamboRouter = _lamboRouter;
     }
 
     function addVTokenWhiteList(address virtualLiquidityToken) public onlyOwner {

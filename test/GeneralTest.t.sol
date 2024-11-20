@@ -31,7 +31,6 @@ contract GeneralTest is BaseTest {
         vm.startPrank(NewMultiSigAdmin);
         factory.removeVTokenWhiteList(address(vETH));
         factory.addVTokenWhiteList(address(vETH));
-        factory.setLamboRouter(address(lamboRouter));
         (address quoteToken, address pool) = factory.createLaunchPad("LamboToken", "LAMBO", 10 ether, address(vETH));
         (address quoteToken2, address pool2) = factory.createLaunchPad("LamboToken", "LAMBO", 10 ether, address(vETH));
  
@@ -61,7 +60,7 @@ contract GeneralTest is BaseTest {
         require(amountOut == amountQuoteOut, "getBuyQuote error");
 
         // Check buy fee
-        uint256 fee = 10 ether * lamboRouter.feeRate() / lamboRouter.FeeDenominator();
+        uint256 fee = 10 ether * lamboRouter.feeRate() / lamboRouter.feeDenominator();
         uint256 multisigBalanceBefore = address(multiSigAdmin).balance;
         console2.log("BuyQuote Fee: ", fee);
 
@@ -80,7 +79,7 @@ contract GeneralTest is BaseTest {
         require(amountQuoteOut == amountXOut);
 
         // Check sell fee
-        fee = amountXOut * lamboRouter.FeeDenominator() / (  lamboRouter.FeeDenominator() - lamboRouter.feeRate() ) - amountXOut;
+        fee = amountXOut * lamboRouter.feeDenominator() / (  lamboRouter.feeDenominator() - lamboRouter.feeRate() ) - amountXOut;
         console2.log("SellQuote Fee: ", fee);
 
         // Check multisig balance
@@ -115,11 +114,13 @@ contract GeneralTest is BaseTest {
     function test_cashIn_and_sellQuote() public {
         (address quoteToken, address pool) = factory.createLaunchPad("LamboToken", "LAMBO", 10 ether, address(vETH));
         uint256 amountQuoteOut = lamboRouter.getBuyQuote(quoteToken, 10 ether);
-        uint256 amountOut = lamboRouter.buyQuote{value: 10 ether}(quoteToken, 10 ether, 0);
-        require(amountOut == amountQuoteOut, "getBuyQuote error");
+        uint256 amountOut0 = lamboRouter.buyQuote{value: 10 ether}(quoteToken, 10 ether, 0);
+        require(amountOut0 == amountQuoteOut, "getBuyQuote error");
 
-        IERC20(quoteToken).approve(address(lamboRouter), amountOut);
-        lamboRouter.sellQuote(quoteToken, amountOut, 0);
+        IERC20(quoteToken).approve(address(lamboRouter), amountOut0);
+        uint256 amountOut1 = lamboRouter.sellQuote(quoteToken, amountOut0, 0);
+        console2.log("amountOut0: ", amountOut0);
+        console2.log("amountOut1: ", amountOut1);
     }
 
     receive() external payable {}

@@ -10,7 +10,7 @@ import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 
 contract LamboVEthRouter is Ownable {
     address public constant NATIVE_TOKEN = 0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE;
-    uint256 public constant FeeDenominator = 10000;
+    uint256 public constant feeDenominator = 10000;
 
     uint256 public feeRate;
     address public immutable vETH;
@@ -28,7 +28,7 @@ contract LamboVEthRouter is Ownable {
     }
 
     function updateFeeRate(uint256 newFeeRate) external onlyOwner {
-        require(newFeeRate <= FeeDenominator, "Fee rate must be less than or equal to FeeDenominator");
+        require(newFeeRate <= feeDenominator, "Fee rate must be less than or equal to feeDenominator");
         feeRate = newFeeRate;
         emit UpdateFeeRate(newFeeRate);
     }
@@ -72,7 +72,7 @@ contract LamboVEthRouter is Ownable {
         );
 
         // Calculate the amount of Meme to be received
-        amountIn = amountIn - amountIn * feeRate / FeeDenominator;
+        amountIn = amountIn - amountIn * feeRate / feeDenominator;
         amount = UniswapV2Library.getAmountOut(amountIn, reserveIn, reserveOut);
     }
 
@@ -93,7 +93,7 @@ contract LamboVEthRouter is Ownable {
 
         // get vETH Amount
         amount = UniswapV2Library.getAmountOut(amountIn, reserveIn, reserveOut);
-        amount = amount - amount * feeRate / FeeDenominator;
+        amount = amount - amount * feeRate / feeDenominator;
     }
 
     function buyQuote(
@@ -147,7 +147,7 @@ contract LamboVEthRouter is Ownable {
         VirtualToken(vETH).cashOut(amountXOut);
 
         // caculate fee
-        uint256 fee = amountXOut * feeRate / FeeDenominator;
+        uint256 fee = amountXOut * feeRate / feeDenominator;
         amountXOut = amountXOut - fee;
 
         // handle amountOut
@@ -174,7 +174,7 @@ contract LamboVEthRouter is Ownable {
         require(msg.value >= amountXIn, "Insufficient msg.value");
 
         // handle fee
-        uint256 fee = amountXIn * feeRate / FeeDenominator;
+        uint256 fee = amountXIn * feeRate / feeDenominator;
         amountXIn = amountXIn - fee;
         (bool success, ) = payable(owner()).call{value: fee}("");
         require(success, "Transfer to Owner failed");

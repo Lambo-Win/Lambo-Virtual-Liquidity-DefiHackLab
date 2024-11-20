@@ -3,11 +3,10 @@ pragma solidity ^0.8.20;
 
 import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import {LaunchPadUtils} from "./Utils/LaunchPadUtils.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 
-contract VirtualToken is ERC20, ReentrancyGuard, Ownable {
+contract VirtualToken is ERC20, Ownable {
     uint256 public lastLoanBlock;
     address public underlyingToken;
     uint256 public loanedAmountThisBlock;
@@ -72,7 +71,7 @@ contract VirtualToken is ERC20, ReentrancyGuard, Ownable {
         emit CashOut(msg.sender, amount);
     }
 
-    function takeLoan(address to, uint256 amount) external payable nonReentrant onlyValidFactory {
+    function takeLoan(address to, uint256 amount) external payable onlyValidFactory {
         if (block.number > lastLoanBlock) {
             lastLoanBlock = block.number;
             loanedAmountThisBlock = 0;
@@ -89,10 +88,9 @@ contract VirtualToken is ERC20, ReentrancyGuard, Ownable {
     /**
      * @notice This function is currently unused.
      */
-    function repayLoan(address to, uint256 amount) external nonReentrant onlyValidFactory {
+    function repayLoan(address to, uint256 amount) external onlyValidFactory {
         _burn(to, amount);
         _decreaseDebt(to, amount);
-
         emit LoanRepaid(to, amount);
     }
 
