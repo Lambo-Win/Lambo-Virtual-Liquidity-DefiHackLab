@@ -65,11 +65,7 @@ contract LamboVEthRouter is Ownable {
     {
 
         // TIPs: ETH -> vETH = 1:1
-        (uint256 reserveIn, uint256 reserveOut) = UniswapV2Library.getReserves(
-            uniswapV2Factory, 
-            vETH, 
-            targetToken
-        );
+        (uint256 reserveIn, uint256 reserveOut) = UniswapV2Library.getReserves(uniswapV2Factory, vETH, targetToken);
 
         // Calculate the amount of Meme to be received
         amountIn = amountIn - amountIn * feeRate / feeDenominator;
@@ -85,11 +81,7 @@ contract LamboVEthRouter is Ownable {
         returns (uint256 amount) 
     {
         // TIPS: vETH -> ETH = 1: 1 - fee
-        (uint256 reserveIn, uint256 reserveOut) = UniswapV2Library.getReserves(
-            uniswapV2Factory, 
-            targetToken, 
-            vETH
-        );
+        (uint256 reserveIn, uint256 reserveOut) = UniswapV2Library.getReserves(uniswapV2Factory, targetToken, vETH);
 
         // get vETH Amount
         amount = UniswapV2Library.getAmountOut(amountIn, reserveIn, reserveOut);
@@ -105,7 +97,6 @@ contract LamboVEthRouter is Ownable {
         payable 
         returns (uint256 amountYOut) 
     {
-        
         amountYOut = _buyQuote(quoteToken, amountXIn, minReturn);
     }
 
@@ -117,6 +108,19 @@ contract LamboVEthRouter is Ownable {
         public 
         returns (uint256 amountXOut) 
     {
+        amountXOut = _sellQuote(quoteToken, amountYIn, minReturn);
+    }
+
+
+
+    //  ====================  internal ====================
+    function _sellQuote(
+        address quoteToken,
+        uint256 amountYIn,
+        uint256 minReturn
+    )   internal          
+        returns (uint256 amountXOut) {
+
         require(
             IERC20(quoteToken).transferFrom(msg.sender, address(this), amountYIn), 
             "Transfer failed"
@@ -162,6 +166,7 @@ contract LamboVEthRouter is Ownable {
         // Emit the swap event
         emit SellQuote(quoteToken, amountYIn, amountXOut);
     }
+    
 
     function _buyQuote(
         address quoteToken,

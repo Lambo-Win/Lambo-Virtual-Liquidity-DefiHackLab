@@ -9,5 +9,5 @@ We believe this mechanism can enhance the liquidity returns for DeFi whales whil
 
 ## Virtual Liquidity
 
-![Defintion](./image.png)
+![Defintion](./framework.png)
 
