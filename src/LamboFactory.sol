@@ -12,16 +12,20 @@ import {UniswapV2Library} from "./libraries/UniswapV2Library.sol";
 import {LamboVEthRouter} from "./LamboVEthRouter.sol";
 
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
+import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
-contract LamboFactory is Ownable {
+contract LamboFactory is Ownable, ReentrancyGuard {
     address public immutable lamboTokenImplementation;
     mapping(address => bool) public whiteList;
 
     event TokenDeployed(address quoteToken);
     event PoolCreated(address virtualLiquidityToken, address quoteToken, address pool, uint256 virtualLiquidityAmount);
     event LiquidityAdded(address virtualLiquidityToken, address quoteToken, uint256 amountVirtualDesired, uint256 amountQuoteOptimal);
+    event VTokenWhiteListAdded(address virtualLiquidityToken);
+    event VTokenWhiteListRemoved(address virtualLiquidityToken);
 
     constructor(address _lamboTokenImplementation) Ownable(msg.sender) {
+        require(_lamboTokenImplementation != address(0), "Invalid token implementation address");
         lamboTokenImplementation = _lamboTokenImplementation;
     }
 
@@ -32,10 +36,12 @@ contract LamboFactory is Ownable {
 
     function addVTokenWhiteList(address virtualLiquidityToken) public onlyOwner {
         whiteList[virtualLiquidityToken] = true;
+        emit VTokenWhiteListAdded(virtualLiquidityToken);
     }
 
     function removeVTokenWhiteList(address virtualLiquidityToken) public onlyOwner {
         whiteList[virtualLiquidityToken] = false;
+        emit VTokenWhiteListRemoved(virtualLiquidityToken);
     }
 
     function _deployLamboToken(string memory name, string memory tickname) internal returns (address quoteToken) {
@@ -53,12 +59,12 @@ contract LamboFactory is Ownable {
         string memory tickname,
         uint256 virtualLiquidityAmount,
         address virtualLiquidityToken
-    ) public onlyWhiteListed(virtualLiquidityToken) returns (address quoteToken, address pool) {
+    ) public onlyWhiteListed(virtualLiquidityToken) nonReentrant returns (address quoteToken, address pool) {
         quoteToken = _deployLamboToken(name, tickname);
         pool = IPoolFactory(LaunchPadUtils.UNISWAP_POOL_FACTORY_).createPair(virtualLiquidityToken, quoteToken);
 
         VirtualToken(virtualLiquidityToken).takeLoan(pool, virtualLiquidityAmount);
-        IERC20(quoteToken).transfer(pool, LaunchPadUtils.TOTAL_AMOUNT_OF_QUOTE_TOKEN);
+        require(IERC20(quoteToken).transfer(pool, LaunchPadUtils.TOTAL_AMOUNT_OF_QUOTE_TOKEN), "Transfer failed");
 
         // Directly minting to address(0) will cause Dexscreener to not display LP being burned
         // So, we have to mint to address(this), then send it to address(0).        
