@@ -198,7 +198,7 @@ contract LamboVEthRouter is Ownable {
         require(amountYOut >= minReturn, "Insufficient output amount");
 
         // Transfer vETH to the pair
-        VirtualToken(vETH).cashIn{value: amountXIn}();
+        VirtualToken(vETH).cashIn{value: amountXIn}(amountXIn);
         assert(VirtualToken(vETH).transfer(pair, amountXIn));
 
         // Perform the swap

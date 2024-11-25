@@ -17,7 +17,7 @@ contract LiquidityManage is BaseTest {
         uint256 beforeAmount = payable(multiSigAdmin).balance;
         vm.startPrank(multiSigAdmin);
 
-        vETH.cashIn{value: 10 ether}();
+        vETH.cashIn{value: 10 ether}(10 ether);
         vm.assertEq(vETH.balanceOf(multiSigAdmin), 10 ether);
 
         uint256 beforeCashOutBalance = payable(multiSigAdmin).balance;
@@ -36,7 +36,7 @@ contract LiquidityManage is BaseTest {
         uint256 beforeAmount = payable(multiSigAdmin).balance;
         vm.startPrank(multiSigAdmin);
 
-        vETH.cashIn{value: 10 ether}();
+        vETH.cashIn{value: 10 ether}(10 ether);
         vm.assertEq(vETH.balanceOf(multiSigAdmin), 10 ether);
 
         vm.stopPrank();

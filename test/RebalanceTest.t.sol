@@ -47,7 +47,7 @@ contract RebalanceTest is Test {
     }
 
     function _createUniswapPool() internal {
-        VirtualToken(VETH).cashIn{value: 1000 ether}();
+        VirtualToken(VETH).cashIn{value: 1000 ether}(1000 ether);
         VirtualToken(VETH).approve(NonfungiblePositionManager, 1000 ether);
 
         IWETH(WETH).deposit{value: 1000 ether}();

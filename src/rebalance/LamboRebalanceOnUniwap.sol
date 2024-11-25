@@ -84,7 +84,7 @@ contract LamboRebalanceOnUniwap is Initializable, UUPSUpgradeable, OwnableUpgrad
 
     function _executeSell(uint256 amountIn, uint256[] memory pools) internal {
         IWETH(weth).withdraw(amountIn);
-        VirtualToken(veth).cashIn{value: amountIn}();
+        VirtualToken(veth).cashIn{value: amountIn}(amountIn);
         IERC20(veth).approve(address(OKXTokenApprove), amountIn);
         IDexRouter(OKXRouter).uniswapV3SwapTo(uint256(uint160(address(this))), amountIn, 0, pools);
     }

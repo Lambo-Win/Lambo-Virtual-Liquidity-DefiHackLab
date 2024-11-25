@@ -8,9 +8,10 @@ import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 
 contract VirtualToken is ERC20, Ownable {
     uint256 public lastLoanBlock;
-    address public underlyingToken;
     uint256 public loanedAmountThisBlock;
-    uint256 public totalCashOutFeesCollected;
+
+    // immutable and constant
+    address public immutable underlyingToken;
     uint256 public constant MAX_LOAN_PER_BLOCK = 300 ether;
 
     mapping(address => uint256) public _debt;
@@ -21,7 +22,9 @@ contract VirtualToken is ERC20, Ownable {
     event LoanRepaid(address user, uint256 amount);
     event CashIn(address user, uint256 amount);
     event CashOut(address user, uint256 amount);
-    event Withdraw(address owner, uint256 amount);
+    event FactoryUpdated(address newFactory);
+    event WhiteListAdded(address user);
+    event WhiteListRemoved(address user);
 
     error DebtOverflow(address user, uint256 debt, uint256 value);
 
@@ -40,6 +43,7 @@ contract VirtualToken is ERC20, Ownable {
         string memory symbol,
         address _underlyingToken
     ) ERC20(name, symbol) Ownable(msg.sender) {
+        require(_underlyingToken != address(0), "Invalid underlying token address");
         underlyingToken = _underlyingToken;
     }
 
@@ -49,18 +53,25 @@ contract VirtualToken is ERC20, Ownable {
 
     function updateFactory(address _factory, bool isValid) external onlyOwner {
         validFactories[_factory] = isValid;
+        emit FactoryUpdated(_factory);
     }
 
     function addToWhiteList(address user) external onlyOwner {
         whiteList[user] = true;
+        emit WhiteListAdded(user);
     }
 
     function removeFromWhiteList(address user) external onlyOwner {
         whiteList[user] = false;
+        emit WhiteListRemoved(user);
     }
 
-    function cashIn() external payable onlyWhiteListed {
-        _transferAssetFromUser(msg.value);
+    function cashIn(uint256 amount) external payable onlyWhiteListed {
+        if (underlyingToken == LaunchPadUtils.NATIVE_TOKEN) {
+            require(msg.value == amount, "Invalid ETH amount");
+        } else {
+            _transferAssetFromUser(amount);
+        }        
         _mint(msg.sender, msg.value);
         emit CashIn(msg.sender, msg.value);
     }
@@ -111,7 +122,7 @@ contract VirtualToken is ERC20, Ownable {
         if (underlyingToken == LaunchPadUtils.NATIVE_TOKEN) {
             require(msg.value >= amount, "Invalid ETH amount");
         } else {
-            IERC20(underlyingToken).transferFrom(msg.sender, address(this), amount);
+            require(IERC20(underlyingToken).transferFrom(msg.sender, address(this), amount), "Transfer failed");
         }
     }
 
