@@ -7,8 +7,9 @@ import {VirtualToken} from "./VirtualToken.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {LamboFactory} from "./LamboFactory.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
+import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
-contract LamboVEthRouter is Ownable {
+contract LamboVEthRouter is Ownable, ReentrancyGuard {
     address public constant NATIVE_TOKEN = 0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE;
     uint256 public constant feeDenominator = 10000;
 
@@ -21,6 +22,9 @@ contract LamboVEthRouter is Ownable {
     event UpdateFeeRate(uint256 newFeeRate);
 
     constructor(address _vETH, address _uniswapV2Factory, address _multiSign) Ownable(_multiSign) public {
+        require(_vETH != address(0), "Invalid vETH address");
+        require(_uniswapV2Factory != address(0), "Invalid UniswapV2Factory address");
+
         feeRate = 100;
 
         vETH = _vETH;
@@ -42,6 +46,7 @@ contract LamboVEthRouter is Ownable {
     ) 
         public 
         payable 
+        nonReentrant
         returns (address quoteToken, address pool, uint256 amountYOut) 
     {
         require(VirtualToken(vETH).isValidFactory(lamboFactory), "only Validfactory");
@@ -95,6 +100,7 @@ contract LamboVEthRouter is Ownable {
     ) 
         public 
         payable 
+        nonReentrant
         returns (uint256 amountYOut) 
     {
         amountYOut = _buyQuote(quoteToken, amountXIn, minReturn);
@@ -106,6 +112,7 @@ contract LamboVEthRouter is Ownable {
         uint256 minReturn
     ) 
         public 
+        nonReentrant
         returns (uint256 amountXOut) 
     {
         amountXOut = _sellQuote(quoteToken, amountYIn, minReturn);
@@ -139,7 +146,7 @@ contract LamboVEthRouter is Ownable {
         require(amountXOut >= minReturn, "Insufficient output amount");
 
         // Transfer quoteToken to the pair
-        assert(IERC20(quoteToken).transfer(pair, amountYIn));
+        require(IERC20(quoteToken).transfer(pair, amountYIn), "Transfer to PoolPair failed");
 
         // Perform the swap
         (uint256 amount0Out, uint256 amount1Out) = quoteToken < vETH 
@@ -199,7 +206,7 @@ contract LamboVEthRouter is Ownable {
 
         // Transfer vETH to the pair
         VirtualToken(vETH).cashIn{value: amountXIn}(amountXIn);
-        assert(VirtualToken(vETH).transfer(pair, amountXIn));
+        require(VirtualToken(vETH).transfer(pair, amountXIn), "Transfer to Pool failed");
 
         // Perform the swap
         (uint256 amount0Out, uint256 amount1Out) = vETH < quoteToken 
@@ -208,7 +215,8 @@ contract LamboVEthRouter is Ownable {
         IUniswapV2Pair(pair).swap(amount0Out, amount1Out, msg.sender, new bytes(0));
 
         if (msg.value > (amountXIn + fee + 1)) {
-            payable(msg.sender).transfer(msg.value - amountXIn - fee - 1);
+            (bool success, ) = payable(msg.sender).call{value: msg.value - amountXIn - fee - 1}("");
+            require(success, "ETH transfer failed");
         }
         
         emit BuyQuote(quoteToken, amountXIn, amountYOut);
