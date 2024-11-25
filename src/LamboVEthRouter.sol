@@ -2,6 +2,8 @@
 pragma solidity ^0.8.20;
 
 import './libraries/UniswapV2Library.sol';
+import {LaunchPadUtils} from "./Utils/LaunchPadUtils.sol";
+
 import {IPool} from "./interfaces/Uniswap/IPool.sol";
 import {VirtualToken} from "./VirtualToken.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
@@ -15,20 +17,16 @@ contract LamboVEthRouter is Ownable, ReentrancyGuard {
 
     uint256 public feeRate;
     address public immutable vETH;
-    address public immutable uniswapV2Factory;
 
     event BuyQuote(address quoteToken, uint256 amountXIn, uint256 amountXOut);
     event SellQuote(address quoteToken, uint256 amountYIn, uint256 amountXOut);
     event UpdateFeeRate(uint256 newFeeRate);
 
-    constructor(address _vETH, address _uniswapV2Factory, address _multiSign) Ownable(_multiSign) public {
+    constructor(address _vETH, address _multiSign) Ownable(_multiSign) public {
         require(_vETH != address(0), "Invalid vETH address");
-        require(_uniswapV2Factory != address(0), "Invalid UniswapV2Factory address");
 
         feeRate = 100;
-
         vETH = _vETH;
-        uniswapV2Factory = _uniswapV2Factory;
     }
 
     function updateFeeRate(uint256 newFeeRate) external onlyOwner {
@@ -70,7 +68,7 @@ contract LamboVEthRouter is Ownable, ReentrancyGuard {
     {
 
         // TIPs: ETH -> vETH = 1:1
-        (uint256 reserveIn, uint256 reserveOut) = UniswapV2Library.getReserves(uniswapV2Factory, vETH, targetToken);
+        (uint256 reserveIn, uint256 reserveOut) = UniswapV2Library.getReserves(LaunchPadUtils.UNISWAP_POOL_FACTORY_, vETH, targetToken);
 
         // Calculate the amount of Meme to be received
         amountIn = amountIn - amountIn * feeRate / feeDenominator;
@@ -86,7 +84,7 @@ contract LamboVEthRouter is Ownable, ReentrancyGuard {
         returns (uint256 amount) 
     {
         // TIPS: vETH -> ETH = 1: 1 - fee
-        (uint256 reserveIn, uint256 reserveOut) = UniswapV2Library.getReserves(uniswapV2Factory, targetToken, vETH);
+        (uint256 reserveIn, uint256 reserveOut) = UniswapV2Library.getReserves(LaunchPadUtils.UNISWAP_POOL_FACTORY_, targetToken, vETH);
 
         // get vETH Amount
         amount = UniswapV2Library.getAmountOut(amountIn, reserveIn, reserveOut);
@@ -133,10 +131,10 @@ contract LamboVEthRouter is Ownable, ReentrancyGuard {
             "Transfer failed"
         );
 
-        address pair = UniswapV2Library.pairFor(uniswapV2Factory, quoteToken, vETH);
+        address pair = UniswapV2Library.pairFor(LaunchPadUtils.UNISWAP_POOL_FACTORY_, quoteToken, vETH);
 
         (uint256 reserveIn, uint256 reserveOut) = UniswapV2Library.getReserves(
-            uniswapV2Factory, 
+            LaunchPadUtils.UNISWAP_POOL_FACTORY_, 
             quoteToken, 
             vETH
         );
@@ -192,10 +190,10 @@ contract LamboVEthRouter is Ownable, ReentrancyGuard {
         require(success, "Transfer to Owner failed");
         
         // handle swap
-        address pair = UniswapV2Library.pairFor(uniswapV2Factory, vETH, quoteToken);
+        address pair = UniswapV2Library.pairFor(LaunchPadUtils.UNISWAP_POOL_FACTORY_, vETH, quoteToken);
 
         (uint256 reserveIn, uint256 reserveOut) = UniswapV2Library.getReserves(
-            uniswapV2Factory, 
+            LaunchPadUtils.UNISWAP_POOL_FACTORY_, 
             vETH, 
             quoteToken
         );

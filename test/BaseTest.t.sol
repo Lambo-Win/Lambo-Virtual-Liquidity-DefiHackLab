@@ -39,7 +39,6 @@ contract BaseTest is Test {
 
         lamboRouter = new LamboVEthRouter(
             address(vETH),
-            address(LaunchPadUtils.UNISWAP_POOL_FACTORY_),
             multiSigAdmin
         );
 
