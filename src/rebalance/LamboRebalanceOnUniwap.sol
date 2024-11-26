@@ -28,8 +28,12 @@ contract LamboRebalanceOnUniwap is Initializable, UUPSUpgradeable, OwnableUpgrad
     address public uniswapPool;
     uint24 public fee;
 
-    function initialize(address _owner, address _vETH, address _uniswap, uint24 _fee) public initializer {
-        __Ownable_init(_owner);
+    function initialize(address _multiSign, address _vETH, address _uniswap, uint24 _fee) public initializer {
+        require(_multiSign != address(0), "Invalid _multiSign address");
+        require(_vETH != address(0), "Invalid _vETH address");
+        require(_uniswap != address(0), "Invalid _uniswap address");
+
+        __Ownable_init(_multiSign);
 
         fee = _fee;
         veth = _vETH;
