@@ -3,6 +3,7 @@ pragma solidity ^0.8.20;
 
 import {Clones} from "@openzeppelin/contracts/proxy/Clones.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {LamboToken} from "./LamboToken.sol";
 import {VirtualToken} from "./VirtualToken.sol";
 import {LaunchPadUtils} from "./Utils/LaunchPadUtils.sol";
@@ -15,6 +16,8 @@ import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
 contract LamboFactory is Ownable, ReentrancyGuard {
+    using SafeERC20 for IERC20;
+
     address public immutable lamboTokenImplementation;
     mapping(address => bool) public whiteList;
 
@@ -64,12 +67,12 @@ contract LamboFactory is Ownable, ReentrancyGuard {
         pool = IPoolFactory(LaunchPadUtils.UNISWAP_POOL_FACTORY_).createPair(virtualLiquidityToken, quoteToken);
 
         VirtualToken(virtualLiquidityToken).takeLoan(pool, virtualLiquidityAmount);
-        require(IERC20(quoteToken).transfer(pool, LaunchPadUtils.TOTAL_AMOUNT_OF_QUOTE_TOKEN), "Transfer failed");
+        IERC20(quoteToken).safeTransfer(pool, LaunchPadUtils.TOTAL_AMOUNT_OF_QUOTE_TOKEN);
 
         // Directly minting to address(0) will cause Dexscreener to not display LP being burned
         // So, we have to mint to address(this), then send it to address(0).        
         IPool(pool).mint(address(this));
-        IERC20(pool).transfer(address(0), IERC20(pool).balanceOf(address(this)));
+        IERC20(pool).safeTransfer(address(0), IERC20(pool).balanceOf(address(this)));
 
         emit PoolCreated(virtualLiquidityToken, quoteToken, pool, virtualLiquidityAmount);
     }

@@ -3,10 +3,13 @@ pragma solidity ^0.8.20;
 
 import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {LaunchPadUtils} from "./Utils/LaunchPadUtils.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 
 contract VirtualToken is ERC20, Ownable {
+    using SafeERC20 for IERC20;
+
     uint256 public lastLoanBlock;
     uint256 public loanedAmountThisBlock;
 
@@ -122,7 +125,7 @@ contract VirtualToken is ERC20, Ownable {
         if (underlyingToken == LaunchPadUtils.NATIVE_TOKEN) {
             require(msg.value >= amount, "Invalid ETH amount");
         } else {
-            require(IERC20(underlyingToken).transferFrom(msg.sender, address(this), amount), "Transfer failed");
+            IERC20(underlyingToken).safeTransferFrom(msg.sender, address(this), amount);
         }
     }
 
@@ -132,7 +135,7 @@ contract VirtualToken is ERC20, Ownable {
             (bool success, ) = msg.sender.call{value: amount}("");
             require(success, "Transfer failed");
         } else {
-            IERC20(underlyingToken).transfer(msg.sender, amount);
+            IERC20(underlyingToken).safeTransfer(msg.sender, amount);
         }
     }
 

@@ -5,16 +5,19 @@ import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
-import "../interfaces/Curve/IStableNGPool.sol";
-import {IMorpho} from "@morpho/interfaces/IMorpho.sol";
-import {IMorphoFlashLoanCallback} from "@morpho/interfaces/IMorphoCallbacks.sol";
+import "@openzeppelin/contracts-upgradeable/utils/ReentrancyGuardUpgradeable.sol";
+import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+
 import {VirtualToken} from "../VirtualToken.sol";
 import {IWETH} from "../interfaces/IWETH.sol";
 import {IQuoter} from "../interfaces/Uniswap/IQuoter.sol";
 import {IDexRouter} from "../interfaces/OKX/IDexRouter.sol";
-import {console} from "forge-std/console.sol";
+import {IMorpho} from "@morpho/interfaces/IMorpho.sol";
+import {IMorphoFlashLoanCallback} from "@morpho/interfaces/IMorphoCallbacks.sol";
 
-contract LamboRebalanceOnUniwap is Initializable, UUPSUpgradeable, OwnableUpgradeable, IMorphoFlashLoanCallback {
+contract LamboRebalanceOnUniwap is Initializable, UUPSUpgradeable, OwnableUpgradeable, ReentrancyGuardUpgradeable, IMorphoFlashLoanCallback {
+    using SafeERC20 for IERC20;
+
     uint256 private constant _BUY_MASK = 1 << 255; // Mask for identifying if the swap is one-for-zero
     uint256 private constant _SELL_MASK = 0; // Mask for identifying if the swap is one-for-zero
 
@@ -34,6 +37,7 @@ contract LamboRebalanceOnUniwap is Initializable, UUPSUpgradeable, OwnableUpgrad
         require(_uniswap != address(0), "Invalid _uniswap address");
 
         __Ownable_init(_multiSign);
+        __ReentrancyGuard_init();
 
         fee = _fee;
         veth = _vETH;
@@ -45,11 +49,11 @@ contract LamboRebalanceOnUniwap is Initializable, UUPSUpgradeable, OwnableUpgrad
     function extractProfit(address to, address token) external onlyOwner {
         uint256 balance = IERC20(token).balanceOf(address(this));
         if (balance > 0) {
-            IERC20(token).transfer(to, balance);
+            IERC20(token).safeTransfer(to, balance);
         }
     }
 
-    function rebalance(uint256 directionMask, uint256 amountIn, uint256 amountOut) external {
+    function rebalance(uint256 directionMask, uint256 amountIn, uint256 amountOut) external nonReentrant {
         uint256 balanceBefore = IERC20(weth).balanceOf(address(this));
         bytes memory data = abi.encode(directionMask, amountIn, amountOut);
         IMorpho(morphoVault).flashLoan(weth, amountIn, data);
