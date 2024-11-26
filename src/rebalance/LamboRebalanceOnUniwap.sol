@@ -73,14 +73,14 @@ contract LamboRebalanceOnUniwap is Initializable, UUPSUpgradeable, OwnableUpgrad
             _executeSell(amountIn, pools);
         }
 
-        IERC20(weth).approve(address(morphoVault), assets);
+        require(IERC20(weth).approve(address(morphoVault), assets), "Approve failed");
     }
 
     function _executeBuy(uint256 amountIn, uint256[] memory pools) internal {
         uint256 initialBalance = address(this).balance;
 
         // Execute buy
-        IERC20(weth).approve(address(OKXTokenApprove), amountIn);
+        require(IERC20(weth).approve(address(OKXTokenApprove), amountIn), "Approve failed");
         uint256 uniswapV3AmountOut = IDexRouter(OKXRouter).uniswapV3SwapTo(uint256(uint160(address(this))), amountIn, 0, pools);
         VirtualToken(veth).cashOut(uniswapV3AmountOut);
 
@@ -94,7 +94,7 @@ contract LamboRebalanceOnUniwap is Initializable, UUPSUpgradeable, OwnableUpgrad
     function _executeSell(uint256 amountIn, uint256[] memory pools) internal {
         IWETH(weth).withdraw(amountIn);
         VirtualToken(veth).cashIn{value: amountIn}(amountIn);
-        IERC20(veth).approve(address(OKXTokenApprove), amountIn);
+        require(IERC20(veth).approve(address(OKXTokenApprove), amountIn), "Approve failed");
         IDexRouter(OKXRouter).uniswapV3SwapTo(uint256(uint160(address(this))), amountIn, 0, pools);
     }
 
