@@ -18,9 +18,6 @@ contract LamboRebalanceOnUniwap is Initializable, UUPSUpgradeable, OwnableUpgrad
     uint256 private constant _BUY_MASK = 1 << 255; // Mask for identifying if the swap is one-for-zero
     uint256 private constant _SELL_MASK = 0; // Mask for identifying if the swap is one-for-zero
 
-    uint160 internal constant MIN_SQRT_RATIO = 4295128739;
-    uint160 internal constant MAX_SQRT_RATIO = 1461446703485210103287273052203988822378723970342;
-
     address public constant weth = 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2;
     address public constant morphoVault = 0xBBBBBbbBBb9cC5e90e3b3Af64bdAF62C37EEFFCb;
     address public constant quoter = 0x5e55C9e631FAE526cd4B0526C4818D6e0a9eF0e3;

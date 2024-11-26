@@ -141,7 +141,7 @@ contract LamboVEthRouter is Ownable, ReentrancyGuard {
 
         // Calculate the amount of vETH to be received
         amountXOut = UniswapV2Library.getAmountOut(amountYIn, reserveIn, reserveOut);
-        require(amountXOut >= minReturn, "Insufficient output amount");
+        require(amountXOut >= minReturn, "Insufficient output amount. MinReturn Error.");
 
         // Transfer quoteToken to the pair
         require(IERC20(quoteToken).transfer(pair, amountYIn), "Transfer to PoolPair failed");
@@ -160,7 +160,6 @@ contract LamboVEthRouter is Ownable, ReentrancyGuard {
         amountXOut = amountXOut - fee;
 
         // handle amountOut
-        require(amountXOut >= minReturn, "MinReturn Error");
         (bool success, ) = msg.sender.call{value: amountXOut}("");
         require(success, "Transfer to User failed");
    
