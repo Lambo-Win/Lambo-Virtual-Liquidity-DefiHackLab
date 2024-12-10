@@ -21,7 +21,7 @@ This is the core contract of Lambo.win:
 2. LamboFactor
 3. LamboRouter
 
-<img src="./framework.png" alt="Defintion" width="600"/>
+![Defintion](./framework.png)
 
 ## Peg And Repeg
 
