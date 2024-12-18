@@ -26,7 +26,7 @@ contract LamboRebalanceOnUniswap2 is IMorphoFlashLoanCallback, AccessControl {
 
     // Set Operator
     bytes32 public constant OPERATOR_ROLE = keccak256("INFINI_BACKEND_ROLE");
-]
+
     constructor(address _multiSign, address _operator, address _vETH, address _uniswap) {
         require(_multiSign != address(0), "Invalid _multiSign address");
         require(_vETH != address(0), "Invalid _vETH address");
