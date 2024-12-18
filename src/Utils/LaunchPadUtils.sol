@@ -16,8 +16,6 @@ library LaunchPadUtils {
     // ETH Mainnet
     address public constant WETH = 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2;
 
-    address public constant CURVE_STABLE_NG_FACTORY = 0x6A8cbed756804B16E05E741eDaBd5cB544AE21bf;
-
     /// @notice The Address of pool factory on uniswap
     address public constant UNISWAP_POOL_FACTORY_ = 0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f;
 

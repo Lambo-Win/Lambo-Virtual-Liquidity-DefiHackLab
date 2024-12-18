@@ -70,11 +70,7 @@ contract VirtualToken is ERC20, Ownable {
     }
 
     function cashIn(uint256 amount) external payable onlyWhiteListed {
-        if (underlyingToken == LaunchPadUtils.NATIVE_TOKEN) {
-            require(msg.value == amount, "Invalid ETH amount");
-        } else {
-            _transferAssetFromUser(amount);
-        }        
+        _transferAssetFromUser(amount);
         _mint(msg.sender, amount);
         emit CashIn(msg.sender, amount);
     }
