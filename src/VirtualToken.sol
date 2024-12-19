@@ -73,8 +73,9 @@ contract VirtualToken is ERC20, Ownable {
     constructor(
         string memory name,
         string memory symbol,
-        address _underlyingToken
-    ) ERC20(name, symbol) Ownable(msg.sender) {
+        address _underlyingToken,
+        address _admin
+    ) ERC20(name, symbol) Ownable(_admin) {
         require(_underlyingToken != address(0), "Invalid underlying token address");
         underlyingToken = _underlyingToken;
     }

@@ -12,10 +12,11 @@ contract DeployTokens is Script {
     // forge script script/0.deployTokens.s.sol:DeployTokens --rpc-url https://eth.llamarpc.com --broadcast -vvvv --legacy --verify --etherscan-api-key RTJCFXFDI87EIYGXH8BT1RJZRQ6IY85N3Q
     function run() external {
         uint256 privateKey = vm.envUint("PRIVATE_KEY");
+        address deployerAddress = vm.addr(privateKey);
 
         vm.startBroadcast(privateKey);
         LamboToken lamboTokenV2 = new LamboToken();
-        VirtualToken vETH = new VirtualToken("VETH", "VETH", LaunchPadUtils.NATIVE_TOKEN);
+        VirtualToken vETH = new VirtualToken("VETH", "VETH", LaunchPadUtils.NATIVE_TOKEN, deployerAddress);
         vm.stopBroadcast();
 
         console2.log("LamboToken address:", address(lamboTokenV2));
