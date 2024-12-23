@@ -37,7 +37,7 @@ contract Rebalance2Test3000 is Test {
         uint24 fee = 3000;
 
         vm.startPrank(multiSign);
-        VETH = address(new VirtualToken("vETH", "vETH", LaunchPadUtils.NATIVE_TOKEN, multiSign));
+        VETH = address(new VirtualToken("vETH", "vETH", LaunchPadUtils.NATIVE_TOKEN, multiSign, 18));
         VirtualToken(VETH).addToWhiteList(address(this));
         vm.stopPrank();
 

@@ -17,11 +17,11 @@
                 fwwwwkhhhkvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvxr[  
                 vvZhhhhhhwCCvvvvvvvvvj|(]]]]]]]]]]]]]]]]]]]]]rvj11
                 hhhhhhhhhOvvvvvvvvvvv\[{\\\\[lllllllll(\\\(lltvvvv
-                hhhhhhhhhOvvvvvvvvvvv\[\hhhhclllllllllqhhhwlltvvvv
+                hhhhhhhhhOvvvvvvvvvvv\[\hhhhclllllllllqhhhwlltvvvvx
                 hhhhhhhhhOvvvvvvvvvvv\[\hhhhclllllllllqhhhwlltvvvv
                 hhhhhhhhhOvvvvvvvvvvv\[}||]-~lllllllll_---_lltvCdd
                 hhhhhhhhhpO0vvvvvvvvvrt/[[_++++llllllllllli))xvLhh
-                hhhhhhhhhhhkUUUUYvvvvvvn))}[[[[>>>>>>>>>~+]UUUUOhh
+                hhhhhhhhhhhkUUUUYvvvvvvn))}[[[[>>>>>>>>>~+]UUUUOhh  
                 hhhhhhhhhhhhhhhhwvvvvvvvvv)[[[[[[[[[[[[[tvXhhhhhhh
                 """""""""/hhhhhhhbbbbbbbbbddddddddddddddbbkhh-""""
                         !11111111111Jhhhhhhhhhhhhhhhhhhhhhhh~    
@@ -45,6 +45,8 @@ contract VirtualToken is ERC20, Ownable {
     // immutable and constant
     address public immutable underlyingToken;
     uint256 public constant MAX_LOAN_PER_BLOCK = 300 ether;
+    uint8 public immutable underlyingTokenDecimals;
+
 
     mapping(address => uint256) public _debt;
     mapping(address => bool) public whiteList;
@@ -74,10 +76,12 @@ contract VirtualToken is ERC20, Ownable {
         string memory name,
         string memory symbol,
         address _underlyingToken,
-        address _admin
+        address _admin,
+        uint8 _underlyingTokenDecimals
     ) ERC20(name, symbol) Ownable(_admin) {
         require(_underlyingToken != address(0), "Invalid underlying token address");
         underlyingToken = _underlyingToken;
+        underlyingTokenDecimals = _underlyingTokenDecimals;
     }
 
     function isValidFactory(address _factory) external view returns (bool) {
@@ -147,7 +151,20 @@ contract VirtualToken is ERC20, Ownable {
         _debt[user] -= amount;
     }
 
+    function _denormalizeDecimal(uint256 amount) internal view returns (uint256) {
+        return (amount * (10 ** underlyingTokenDecimals)) / (10 ** 18);
+    }
+
+    /**
+     * @dev Transfers the specified amount of the underlying asset from the user to the contract.
+     * The amount is first denormalized to match the underlying token's decimals.
+     * If the underlying token is the native token (e.g., ETH), the function checks if the sent value is sufficient.
+     * Otherwise, it transfers the specified amount of the ERC20 token from the user to the contract.
+     * @param amount The amount of the token in the contract's standard decimal format to transfer.
+     */
     function _transferAssetFromUser(uint256 amount) internal {
+        amount = _denormalizeDecimal(amount);
+
         if (underlyingToken == LaunchPadUtils.NATIVE_TOKEN) {
             require(msg.value >= amount, "Invalid ETH amount");
         } else {
@@ -155,7 +172,16 @@ contract VirtualToken is ERC20, Ownable {
         }
     }
 
+    /**
+     * @dev Transfers the specified amount of the underlying asset from the contract to the user.
+     * The amount is first denormalized to match the underlying token's decimals.
+     * If the underlying token is the native token (e.g., ETH), the function checks if the contract's balance is sufficient and transfers the amount.
+     * Otherwise, it transfers the specified amount of the ERC20 token from the contract to the user.
+     * @param amount The amount of the token in the contract's standard decimal format to transfer.
+     */
     function _transferAssetToUser(uint256 amount) internal {
+        amount = _denormalizeDecimal(amount);
+
         if (underlyingToken == LaunchPadUtils.NATIVE_TOKEN) {
             require(address(this).balance >= amount, "Insufficient ETH balance");
             (bool success, ) = msg.sender.call{value: amount}("");

@@ -16,7 +16,7 @@ contract DeployTokens is Script {
 
         vm.startBroadcast(privateKey);
         LamboToken lamboTokenV2 = new LamboToken();
-        VirtualToken vETH = new VirtualToken("VETH", "VETH", LaunchPadUtils.NATIVE_TOKEN, deployerAddress);
+        VirtualToken vETH = new VirtualToken("VETH", "VETH", LaunchPadUtils.NATIVE_TOKEN, deployerAddress, 18);
         vm.stopBroadcast();
 
         console2.log("LamboToken address:", address(lamboTokenV2));
