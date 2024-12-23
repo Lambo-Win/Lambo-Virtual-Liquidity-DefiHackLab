@@ -3,7 +3,7 @@
 pragma solidity ^0.8.20;
 
 import {Script} from "forge-std/Script.sol";
-import {LamboRebalanceOnUniswap2} from "../src/rebalance/LamboRebalanceOnUniswap2.sol";
+import {LamboRebalanceOnUniswapV3} from "../src/rebalance/LamboRebalanceOnUniswapV3.sol";
 import "forge-std/console.sol";
 
 contract DeployLamboRebalanceOnUniswap is Script {
@@ -21,7 +21,7 @@ contract DeployLamboRebalanceOnUniswap is Script {
 
         vm.startBroadcast(privateKey);
 
-        LamboRebalanceOnUniswap2 lamboRebalance = new LamboRebalanceOnUniswap2(multiSign, operator, VETH, uniswapPool);
+        LamboRebalanceOnUniswapV3 lamboRebalance = new LamboRebalanceOnUniswapV3(multiSign, operator, VETH, uniswapPool);
 
         console.log("LamboRebalanceOnUniwap address:", address(lamboRebalance));
 

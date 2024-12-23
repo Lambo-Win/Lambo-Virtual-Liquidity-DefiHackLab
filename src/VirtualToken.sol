@@ -56,7 +56,7 @@ contract VirtualToken is ERC20, Ownable {
     event LoanRepaid(address user, uint256 amount);
     event CashIn(address user, uint256 amount);
     event CashOut(address user, uint256 amount);
-    event FactoryUpdated(address newFactory);
+    event FactoryUpdated(address newFactory, bool isValid);
     event WhiteListAdded(address user);
     event WhiteListRemoved(address user);
 
@@ -90,7 +90,7 @@ contract VirtualToken is ERC20, Ownable {
 
     function updateFactory(address _factory, bool isValid) external onlyOwner {
         validFactories[_factory] = isValid;
-        emit FactoryUpdated(_factory);
+        emit FactoryUpdated(_factory, isValid);
     }
 
     function addToWhiteList(address user) external onlyOwner {

@@ -10,7 +10,7 @@ import {LaunchPadUtils} from "../../src/Utils/LaunchPadUtils.sol";
 import {IDexRouter} from "../../src/interfaces/OKX/IDexRouter.sol";
 import {IUniswapV3Pool} from "../../src/interfaces/Uniswap/IUniswapV3Pool.sol";
 
-import {LamboRebalanceOnUniswap2} from "../../src/rebalance/LamboRebalanceOnUniswap2.sol";
+import {LamboRebalanceOnUniswapV3} from "../../src/rebalance/LamboRebalanceOnUniswapV3.sol";
 import {ILiquidityManager} from  "../../src/interfaces/Uniswap/ILiquidityManager.sol";
 import {INonfungiblePositionManager} from "../../src/interfaces/Uniswap/INonfungiblePositionManager.sol";
 import {IPoolInitializer} from "../../src/interfaces/Uniswap/IPoolInitializer.sol";
@@ -19,7 +19,7 @@ import {console} from "forge-std/console.sol";
 contract Rebalance2Test3000 is Test {
     address public VETH;
     address public uniswapPool ;
-    LamboRebalanceOnUniswap2 public lamboRebalance;
+    LamboRebalanceOnUniswapV3 public lamboRebalance;
     uint256 private constant _ONE_FOR_ZERO_MASK = 1 << 255; // Mask for identifying if the swap is one-for-zero
 
     address public WETH = 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2;
@@ -43,7 +43,7 @@ contract Rebalance2Test3000 is Test {
 
         _createUniswapPool();
 
-        lamboRebalance = new LamboRebalanceOnUniswap2(multiSign, address(this), address(VETH), address(uniswapPool));
+        lamboRebalance = new LamboRebalanceOnUniswapV3(multiSign, address(this), address(VETH), address(uniswapPool));
 
         vm.startPrank(multiSign);
         VirtualToken(VETH).addToWhiteList(address(lamboRebalance));
@@ -88,10 +88,10 @@ contract Rebalance2Test3000 is Test {
         // 1.0061056125537582
 
         vm.expectRevert("Return Amount Is Not Enough");
-        lamboRebalance.rebalnce(229309999999999999999 + 1);
+        lamboRebalance.rebalance(229309999999999999999 + 1);
 
         // // Simulate: -229309999999999999999
-        lamboRebalance.rebalnce(229309999999999999999);
+        lamboRebalance.rebalance(229309999999999999999);
 
         (sqrtPriceX96, tick, , , , , ) = IUniswapV3Pool(uniswapPool).slot0();
         require(sqrtPriceX96 == targetPrice, "rebalance target error");
@@ -113,9 +113,9 @@ contract Rebalance2Test3000 is Test {
         // 0.9939314397240459
 
         vm.expectRevert("Return Amount Is Not Enough");
-        lamboRebalance.rebalnce(229309999999999999999 + 1);
+        lamboRebalance.rebalance(229309999999999999999 + 1);
 
-        lamboRebalance.rebalnce(229309999999999999999);
+        lamboRebalance.rebalance(229309999999999999999);
 
         (sqrtPriceX96,  tick, , , , , ) = IUniswapV3Pool(uniswapPool).slot0();
         require(sqrtPriceX96 == targetPrice, "rebalance target error");
