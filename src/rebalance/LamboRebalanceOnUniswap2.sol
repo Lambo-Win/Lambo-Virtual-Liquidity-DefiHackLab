@@ -57,13 +57,13 @@ contract LamboRebalanceOnUniswap2 is IMorphoFlashLoanCallback, AccessControl {
     }
 
     // rebalance the sqrtPrice to targetPrice (1:1)
-    function rebalnce() external onlyRole(OPERATOR_ROLE) {
+    function rebalnce(uint256 minReturn) external onlyRole(OPERATOR_ROLE) returns (uint256 ) {
         (bool zeroForOne, , address tokenIn, address tokenOut) = _getDirection();
 
         // choose a large amount to rebalance, amountOut < sellAmount naturally.
         uint256 sellAmount = IERC20(tokenOut).balanceOf(VETHWETHPool);
 
-        bytes memory data = abi.encode(zeroForOne, sellAmount, tokenIn, tokenOut);
+        bytes memory data = abi.encode(zeroForOne, sellAmount, minReturn, tokenIn, tokenOut);
 
         IMorpho(morphoVault).flashLoan(WETH, sellAmount, data);
 
@@ -72,7 +72,7 @@ contract LamboRebalanceOnUniswap2 is IMorphoFlashLoanCallback, AccessControl {
     }
 
     function onMorphoFlashLoan(uint256 assets, bytes calldata data) external onlyMorphoVault {
-        (bool zeroForOne, uint256 sellAmount, address tokenIn, address tokenOut) = abi.decode(data, (bool, uint256, address, address));
+        (bool zeroForOne, uint256 sellAmount, uint256 minReturn, address tokenIn, address tokenOut) = abi.decode(data, (bool, uint256, uint256, address, address));
 
         // loan `assets` amount of WETH
         // prepare the tokenIn first, if the tokenIn is VETH, convert to WETH
@@ -86,7 +86,7 @@ contract LamboRebalanceOnUniswap2 is IMorphoFlashLoanCallback, AccessControl {
             zeroForOne,
             int256(sellAmount),
             targetPrice,
-            abi.encode(tokenIn, tokenOut)
+            abi.encode(tokenIn, tokenOut, minReturn)
         );
 
         // Convert all VETH to WETH
@@ -105,11 +105,13 @@ contract LamboRebalanceOnUniswap2 is IMorphoFlashLoanCallback, AccessControl {
         bytes calldata _data
     ) external onlyVETHWETHPool {
         require(amount0Delta > 0 || amount1Delta > 0); // swaps entirely within 0-liquidity regions are not supported
-        (address tokenIn, address tokenOut) = abi.decode(_data, (address, address ));
+        (address tokenIn, address tokenOut, uint256 minReturn) = abi.decode(_data, (address, address, uint256));
 
-        (bool isExactInput, uint256 amountToPay) = amount0Delta > 0
-            ? (tokenIn < tokenOut, uint256(amount0Delta))
-            : (tokenOut < tokenIn, uint256(amount1Delta));  
+        (bool isExactInput, uint256 amountToPay, uint256 amountOut) = amount0Delta > 0
+            ? (tokenIn < tokenOut, uint256(amount0Delta), uint256(-amount1Delta))
+            : (tokenOut < tokenIn, uint256(amount1Delta), uint256(-amount0Delta));  
+
+        require(amountOut >= minReturn, "Return Amount Is Not Enough");
 
         if (isExactInput) {
             pay(tokenIn, amountToPay);
