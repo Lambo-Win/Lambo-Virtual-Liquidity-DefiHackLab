@@ -77,7 +77,7 @@ contract Rebalance2Test3000 is Test {
         INonfungiblePositionManager(NonfungiblePositionManager).mint(params);
     }
 
-    function test0() public {
+    function test_rebalance0() public {
         uint256 amount = 230 ether;
         uint256 _v3pool = uint256(uint160(uniswapPool)) | (_ONE_FOR_ZERO_MASK);
         uint256[] memory pools = new uint256[](1);
@@ -87,7 +87,11 @@ contract Rebalance2Test3000 is Test {
         console.log(sqrtPriceX96);
         // 1.0061056125537582
 
-        lamboRebalance.rebalnce();
+        vm.expectRevert("Return Amount Is Not Enough");
+        lamboRebalance.rebalnce(229309999999999999999 + 1);
+
+        // // Simulate: -229309999999999999999
+        lamboRebalance.rebalnce(229309999999999999999);
 
         (sqrtPriceX96, tick, , , , , ) = IUniswapV3Pool(uniswapPool).slot0();
         require(sqrtPriceX96 == targetPrice, "rebalance target error");
@@ -95,7 +99,7 @@ contract Rebalance2Test3000 is Test {
         console.log(IERC20(WETH).balanceOf(address(lamboRebalance)));
     }
 
-    function test1() public {
+    function test_rebalance1() public {
         uint256 amount = 230 ether;
         uint256 _v3pool = uint256(uint160(uniswapPool));
         uint256[] memory pools = new uint256[](1);
@@ -108,7 +112,10 @@ contract Rebalance2Test3000 is Test {
         console.log(sqrtPriceX96);
         // 0.9939314397240459
 
-        lamboRebalance.rebalnce();
+        vm.expectRevert("Return Amount Is Not Enough");
+        lamboRebalance.rebalnce(229309999999999999999 + 1);
+
+        lamboRebalance.rebalnce(229309999999999999999);
 
         (sqrtPriceX96,  tick, , , , , ) = IUniswapV3Pool(uniswapPool).slot0();
         require(sqrtPriceX96 == targetPrice, "rebalance target error");
